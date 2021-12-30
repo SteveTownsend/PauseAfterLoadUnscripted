@@ -1,6 +1,6 @@
 /*************************************************************************
 PauseAfterLoadUnscripted
-Copyright (c) Steve Townsend 2020
+Copyright (c) Steve Townsend 2021
 
 >>> SOURCE LICENSE >>>
 This program is free software; you can redistribute it and/or modify

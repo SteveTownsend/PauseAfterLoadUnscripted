@@ -25,8 +25,8 @@
     <ClCompile Include="src\PrecompiledHeaders.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\PluginFacade.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="src\Data\SettingsCache.cpp">
+      <Filter>src\Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -57,8 +57,14 @@
     <ClInclude Include="src\PrecompiledHeaders.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\PluginFacade.h">
-      <Filter>src</Filter>
+    <ClInclude Include="src\Pausing\InputListener.h">
+      <Filter>src\Pausing</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Pausing\PauseHandler.h">
+      <Filter>src\Pausing</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Data\SettingsCache.h">
+      <Filter>src\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +85,9 @@
     </Filter>
     <Filter Include="Batch">
       <UniqueIdentifier>{c3f9f145-be00-43d2-9254-10c5523d47ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Pausing">
+      <UniqueIdentifier>{bf4c8422-b1fb-4310-92e7-ab0b52297c6c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

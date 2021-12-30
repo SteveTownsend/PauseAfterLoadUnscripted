@@ -1,6 +1,6 @@
 ﻿/*************************************************************************
 PauseAfterLoadUnscripted
-Copyright (c) Steve Townsend 2020
+Copyright (c) Steve Townsend 2021
 
 >>> SOURCE LICENSE >>>
 This program is free software; you can redistribute it and/or modify
@@ -18,15 +18,13 @@ http://www.fsf.org/licensing/licenses
 >>> END OF LICENSE >>>
 *************************************************************************/
 #include "PrecompiledHeaders.h"
-#include "PluginFacade.h"
 
-#include "Utilities/utils.h"
+#include "Data/SettingsCache.h"
+#include "Pausing/PauseHandler.h"
 #include "Utilities/version.h"
 #include "Utilities/LogStackWalker.h"
 
-#include <shlobj.h>
-#include <sstream>
-#include <KnownFolders.h>
+#include <ShlObj.h>
 #include <filesystem>
 
 #include <spdlog/sinks/basic_file_sink.h>
@@ -37,18 +35,31 @@ std::shared_ptr<spdlog::logger> PALULogger;
 const std::string LoggerName = "PALU_Logger";
 const std::string LogLevelVariable = "PALULogLevel";
 
+std::optional<palu::PauseHandler> pauseHandler;
+
 void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 {
 	switch (msg->type)
 	{
 	case SKSE::MessagingInterface::kDataLoaded:
-		if (!palu::PluginFacade::Instance().Init())
-		{
-			REL_FATALERROR("Data initialization failed - no Pause");
-			return;
-		}
+		pauseHandler.emplace();
 		REL_MESSAGE("Initialized Data, Pause available");
 		break;
+
+#ifdef _DEBUG
+	// to confirm timings wrt Loading Menu handling
+	case SKSE::MessagingInterface::kPreLoadGame:
+		REL_MESSAGE("kPreLoadGame message");
+		break;
+
+	case SKSE::MessagingInterface::kPostLoadGame:
+		REL_MESSAGE("kPostLoadGame message");
+		break;
+
+	case SKSE::MessagingInterface::kNewGame:
+		REL_MESSAGE("kNewGame message");
+		break;
+#endif
 
 	default:
 		break;
@@ -168,9 +179,11 @@ bool DLLEXPORT SKSEPlugin_Load(const SKSE::LoadInterface * skse)
 	}
 #endif
 
+	palu::SettingsCache::Instance().Refresh();
+
 	REL_MESSAGE("{} plugin loaded", PALU_NAME);
 	SKSE::Init(skse);
-	SKSE::GetMessagingInterface()->RegisterListener("PALU", SKSEMessageHandler);
+	SKSE::GetMessagingInterface()->RegisterListener(SKSEMessageHandler);
 
 	return true;
 }

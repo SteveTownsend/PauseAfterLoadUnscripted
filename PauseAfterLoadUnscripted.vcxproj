@@ -147,6 +147,7 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>dbghelp.lib;shlwapi.lib;%(AdditionalDependencies);version.lib</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalLibraryDirectories>$(SourceRoot)boost_1_76_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -184,6 +185,7 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>dbghelp.lib;shlwapi.lib;%(AdditionalDependencies);version.lib</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalLibraryDirectories>$(SourceRoot)boost_1_76_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -224,6 +226,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalLibraryDirectories>$(SourceRoot)boost_1_76_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>if exist "$(TargetPath)" (del "$(TargetPath)")</Command>
@@ -260,6 +263,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalLibraryDirectories>$(SourceRoot)boost_1_76_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>if exist "$(TargetPath)" (del "$(TargetPath)")</Command>
@@ -296,6 +300,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalLibraryDirectories>$(SourceRoot)boost_1_76_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -334,6 +339,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalLibraryDirectories>$(SourceRoot)boost_1_76_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -349,9 +355,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Data\SettingsCache.cpp" />
     <ClCompile Include="src\Data\SimpleIni.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\PluginFacade.cpp" />
     <ClCompile Include="src\PrecompiledHeaders.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug AE|x64'">Create</PrecompiledHeader>
@@ -375,8 +381,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource1.h" />
+    <ClInclude Include="src\Data\SettingsCache.h" />
     <ClInclude Include="src\Data\SimpleIni.h" />
-    <ClInclude Include="src\PluginFacade.h" />
+    <ClInclude Include="src\Pausing\InputListener.h" />
+    <ClInclude Include="src\Pausing\PauseHandler.h" />
     <ClInclude Include="src\PrecompiledHeaders.h" />
     <ClInclude Include="src\Utilities\LogStackWalker.h" />
     <ClInclude Include="src\Utilities\LogWrapper.h" />
