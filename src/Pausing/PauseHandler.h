@@ -54,6 +54,40 @@ public:
 	PauseHandler& operator=(const PauseHandler&) = default;
 	PauseHandler& operator=(PauseHandler&&) = default;
 
+	void Pause()
+	{
+		bool expected(false);
+		bool desired(true);
+		if (_paused.compare_exchange_strong(expected, desired))
+		{
+			_paused = true;
+			_listener->Enable();
+			ExecuteCommand(std::format("sgtm {:.3f}", SettingsCache::Instance().PausedSGTM()));
+			// Optionally, resume after configured delay
+			double delay(SettingsCache::Instance().ResumeAfter());
+			bool expected2(false);
+			bool desired2(true);
+			if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
+			{
+				REL_DMESSAGE("Resume game if no input for {:.1f} seconds", delay);
+				_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>(delay * 1000.0)));
+				_timer.async_wait([this](const boost::system::error_code& ec) {
+					if (!ec)
+					{
+						REL_DMESSAGE("Pause timed out - restart game");
+						Unpause();
+					}
+				});
+				// Start IO Service to handle timer
+				if (_thread.has_value())
+				{
+					_thread.reset();
+				}
+				_thread.emplace(std::bind(&PauseHandler::IOService, this));
+			}
+		}
+	}
+
 protected:
 
 	RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
@@ -159,40 +193,6 @@ private:
 			}
 		}
 		return false;
-	}
-
-	void Pause()
-	{
-		bool expected(false);
-		bool desired(true);
-		if (_paused.compare_exchange_strong(expected, desired))
-		{
-			_paused = true;
-			_listener->Enable();
-			ExecuteCommand(std::format("sgtm {:.3f}", SettingsCache::Instance().PausedSGTM()));
-			// Optionally, resume after configured delay
-			double delay(SettingsCache::Instance().ResumeAfter());
-			bool expected2(false);
-			bool desired2(true);
-			if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
-			{
-				REL_DMESSAGE("Resume game if no input for {:.1f} seconds", delay);
-				_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>(delay * 1000.0)));
-				_timer.async_wait([this](const boost::system::error_code& ec) {
-					if (!ec)
-					{
-						REL_DMESSAGE("Pause timed out - restart game");
-						Unpause();
-					}
-				});
-				// Start IO Service to handle timer
-				if (_thread.has_value())
-				{
-					_thread.reset();
-				}
-				_thread.emplace(std::bind(&PauseHandler::IOService, this));
-			}
-		}
 	}
 
 	void Unpause()
