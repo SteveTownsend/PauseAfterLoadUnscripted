@@ -375,6 +375,11 @@ const std::string& SimpleIni::KeyIterator::operator*()
 	return m_mapIterator->first;
 }
 
+const std::string& SimpleIni::KeyIterator::operator!()
+{
+	return m_mapIterator->second.value;
+}
+
 SimpleIni::KeyIterator SimpleIni::KeyIterator::operator++()
 {
 	++m_mapIterator;

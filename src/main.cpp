@@ -83,12 +83,9 @@ void InitializeDiagnostics()
 {
 #if _DEBUG
 	_CrtSetReportHook(MyCrtReportHook);
-	// default Debug log level is TRACE
-	spdlog::level::level_enum logLevel(spdlog::level::trace);
-#else
-	// default Release log level is ERROR
-	spdlog::level::level_enum logLevel(spdlog::level::err);
 #endif
+	// default log level is full (TRACE)
+	spdlog::level::level_enum logLevel(spdlog::level::trace);
 	char* levelValue;
 	size_t requiredSize;
 	if (getenv_s(&requiredSize, NULL, 0, LogLevelVariable.c_str()) == 0 && requiredSize > 0)
@@ -194,7 +191,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
 		SKSE::PluginVersionData v;
 
 		// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
-		v.PluginVersion({ 1, 0, 0, 0 });
+		v.PluginVersion({ 1, 0, 0, 2 });
 		v.PluginName(PALU_NAME);
 		v.AuthorName(MOD_AUTHOR);
 		v.AuthorEmail(MOD_SUPPORT);

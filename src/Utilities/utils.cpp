@@ -48,7 +48,7 @@ namespace FileUtils
 				if (lastSlash != std::string::npos)
 					s_runtimeDirectory = runtimePath.substr(0, lastSlash + 1);
 			}
-			DBG_MESSAGE("GetGamePath result: {}", s_runtimeDirectory.c_str());
+			REL_MESSAGE("GetGamePath result: {}", s_runtimeDirectory.c_str());
 		}
 		return s_runtimeDirectory;
 	}
@@ -121,7 +121,7 @@ namespace utils
 			return 0.0;
 
 		double result(setting->GetFloat());
-		DBG_MESSAGE("Game Setting({})={:0.3f}", name.c_str(), result);
+		REL_MESSAGE("Game Setting({})={:0.3f}", name.c_str(), result);
 		return result;
 	}
 }
@@ -159,7 +159,7 @@ namespace WindowsUtils
 		{
 			REL_ERROR("Adjust requested wait of {:0.2f} seconds to {:0.2f}", delaySeconds, PragmaticLongestWait);
 		}
-		DBG_MESSAGE("wait for {} milliseconds", static_cast<long long>(delaySeconds * 1000.0));
+		REL_MESSAGE("wait for {} milliseconds", static_cast<long long>(delaySeconds * 1000.0));
 
 		// flush log output here
 		PALULogger->flush();
@@ -256,7 +256,7 @@ namespace StringUtils
 		std::ostringstream formIDStr;
 		formIDStr << "0x" << std::hex << std::setw(8) << std::setfill('0') << formID;
 		std::string result(formIDStr.str());
-		DBG_VMESSAGE("FormID 0x{:08x} mapped to {}", formID, result.c_str());
+		REL_VMESSAGE("FormID 0x{:08x} mapped to {}", formID, result.c_str());
 		return result;
 	}
 }

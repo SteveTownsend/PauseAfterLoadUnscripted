@@ -311,6 +311,9 @@ class SimpleIni::KeyIterator
 		/// \brief    Overloading dereference operator
 		/// \details  Overloading the dereference operator to get the key's name
 		const std::string& operator*();
+		/// \brief    Overloading negation operator
+		/// \details  Overloading the negation operator to get the key's value
+		const std::string& operator!();
 		/// \brief    Overloading pre-increment operator
 		/// \details  Overloading the pre-increment operator to get the next key
 		KeyIterator operator++();
