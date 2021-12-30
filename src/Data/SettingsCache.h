@@ -31,6 +31,8 @@ public:
 
 	// time out the pause - set in seconds - 0.0 means wait for user input before resuming
 	[[nodiscard]] double ResumeAfter() const { return _resumeAfter; }
+	//optional pause-on-save
+	[[nodiscard]] bool PauseOnSave() const { return _pauseOnSave; }
 	// Pause and Resume values for sgtm
 	[[nodiscard]] double PausedSGTM() const { return _pausedSGTM; }
 	[[nodiscard]] double NormalSGTM() const { return _normalSGTM; }
@@ -46,10 +48,12 @@ private:
 	static constexpr double DefaultResumeAfter = 3.0;
 	static constexpr double DefaultPausedSGTM = 0.001;
 	static constexpr double DefaultNormalSGTM = 1.0;
+	static constexpr bool DefaultPauseOnSave = false;
 
 	double _resumeAfter = DefaultResumeAfter;
 	double _pausedSGTM = DefaultPausedSGTM;
 	double _normalSGTM = DefaultNormalSGTM;
+	bool _pauseOnSave = DefaultPauseOnSave;
 };
 
 }

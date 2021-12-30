@@ -60,6 +60,8 @@ void SettingsCache::Refresh(void)
 	// SimpleIni normalizes names to lowercase
 	_resumeAfter = ini.GetValue<double>(SectionName, "resumeafter", DefaultResumeAfter);
 	REL_VMESSAGE("ResumeAfter = {:.1f} seconds", _resumeAfter);
+	_pauseOnSave = ini.GetValue<bool>(SectionName, "pauseonsave", DefaultPauseOnSave);
+	REL_VMESSAGE("PauseOnSave = {}", _pauseOnSave);
 	_pausedSGTM = ini.GetValue<double>(SectionName, "pausedsgtm", DefaultPausedSGTM);
 	REL_VMESSAGE("PausedSGTM = {:.3f}", _pausedSGTM);
 	_normalSGTM = ini.GetValue<double>(SectionName, "normalsgtm", DefaultNormalSGTM);

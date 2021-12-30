@@ -46,6 +46,14 @@ void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 		REL_MESSAGE("Initialized Data, Pause available");
 		break;
 
+	case SKSE::MessagingInterface::kSaveGame:
+		if (palu::SettingsCache::Instance().PauseOnSave())
+		{
+			REL_MESSAGE("Request Pause on kSaveGame message");
+			pauseHandler.value().Pause();
+		}
+		break;
+
 #ifdef _DEBUG
 	// to confirm timings wrt Loading Menu handling
 	case SKSE::MessagingInterface::kPreLoadGame:
@@ -191,7 +199,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
 		SKSE::PluginVersionData v;
 
 		// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
-		v.PluginVersion({ 1, 0, 0, 2 });
+		v.PluginVersion({ 1, 0, 0, 3 });
 		v.PluginName(PALU_NAME);
 		v.AuthorName(MOD_AUTHOR);
 		v.AuthorEmail(MOD_SUPPORT);
