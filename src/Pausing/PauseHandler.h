@@ -147,14 +147,14 @@ private:
 	{
 		if (RE::PlayerCharacter::GetSingleton()->HasEffectWithArchetype(RE::EffectSetting::Archetype::kSlowTime))
 		{
-			DBG_DMESSAGE("Player subject to SlowTime archetype effect");
+			REL_DMESSAGE("Player subject to SlowTime archetype effect");
 			return true;
 		}
 		for (const auto effect : _slowTimeEffects)
 		{
 			if (RE::PlayerCharacter::GetSingleton()->HasMagicEffect(effect))
 			{
-				DBG_DMESSAGE("Player subject to ValueModifier-BowSpeedBonus archetype effect");
+				REL_DMESSAGE("Player subject to ValueModifier-BowSpeedBonus archetype effect");
 				return true;
 			}
 		}
@@ -176,12 +176,12 @@ private:
 			bool desired2(true);
 			if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
 			{
-				DBG_DMESSAGE("Resume game if no input for {:.1f} seconds", delay);
+				REL_DMESSAGE("Resume game if no input for {:.1f} seconds", delay);
 				_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>(delay * 1000.0)));
 				_timer.async_wait([this](const boost::system::error_code& ec) {
 					if (!ec)
 					{
-						DBG_DMESSAGE("Pause timed out - restart game");
+						REL_DMESSAGE("Pause timed out - restart game");
 						Unpause();
 					}
 				});
@@ -202,7 +202,7 @@ private:
 		bool desired(false);
 		if (_delayed.compare_exchange_strong(expected, desired))
 		{
-			DBG_DMESSAGE("Cancel active pause timer");
+			REL_DMESSAGE("Cancel active pause timer");
 			_timer.cancel();
 		}
 
@@ -225,16 +225,16 @@ private:
 			const RE::NiPointer<RE::TESObjectREFR> selectedRef;
 			script->SetCommand(a_command);
 			script->CompileAndRun(selectedRef.get());
-			DBG_DMESSAGE("Ran Console command {}", a_command);
+			REL_DMESSAGE("Ran Console command {}", a_command);
 		}
 	}
 
 	void IOService()
 	{
-		DBG_DMESSAGE("Starting timer thread");
+		REL_DMESSAGE("Starting timer thread");
 		_io_service.run_one();
 		_io_service.restart();
-		DBG_DMESSAGE("Exiting timer thread");
+		REL_DMESSAGE("Exiting timer thread");
 	}
 
 	std::unique_ptr<InputListener> _listener;

@@ -39,15 +39,31 @@ SettingsCache& SettingsCache::Instance()
 
 void SettingsCache::Refresh(void)
 {
-	REL_VMESSAGE("Refresh settings cache");
 	SimpleIni ini;
-	ini.Load(GetFileName());
-	_resumeAfter = ini.GetValue<double>(SectionName, "ResumeAfter", DefaultResumeAfter);
-	REL_VMESSAGE("ResumeAfter = {:0.1f} seconds", _resumeAfter);
-	_pausedSGTM = ini.GetValue<double>(SectionName, "PausedSGTM", DefaultPausedSGTM);
-	REL_VMESSAGE("PausedSGTM = {:0.3f}", _pausedSGTM);
-	_normalSGTM = ini.GetValue<double>(SectionName, "NormalSGTM", DefaultNormalSGTM);
-	REL_VMESSAGE("NormalSGTM = {:0.3f}", _normalSGTM);
+	const std::string inFile(GetFileName());
+	if (!ini.Load(inFile))
+	{
+		REL_WARNING("Settings cache load from {} failed, using defaults", inFile.c_str());
+	}
+	else
+	{
+		REL_MESSAGE("Refresh settings cache from valid file {}", inFile.c_str());
+		for (auto section = ini.beginSection(); section != ini.endSection(); ++section)
+		{
+			DBG_MESSAGE("Section {}", *section);
+			for (auto key = ini.beginKey(*section); key != ini.endKey(*section); ++key)
+			{
+				DBG_MESSAGE("Entry {}={}", *key, !key);
+			}
+		}
+	}
+	// SimpleIni normalizes names to lowercase
+	_resumeAfter = ini.GetValue<double>(SectionName, "resumeafter", DefaultResumeAfter);
+	REL_VMESSAGE("ResumeAfter = {:.1f} seconds", _resumeAfter);
+	_pausedSGTM = ini.GetValue<double>(SectionName, "pausedsgtm", DefaultPausedSGTM);
+	REL_VMESSAGE("PausedSGTM = {:.3f}", _pausedSGTM);
+	_normalSGTM = ini.GetValue<double>(SectionName, "normalsgtm", DefaultNormalSGTM);
+	REL_VMESSAGE("NormalSGTM = {:.3f}", _normalSGTM);
 }
 
 const std::string SettingsCache::GetFileName() const
@@ -58,7 +74,6 @@ const std::string SettingsCache::GetFileName() const
 		return "";
 
 	iniFilePath = RuntimeDir + "Data\\SKSE\\Plugins\\" + IniFileName;
-	DBG_MESSAGE("INI file at {}", iniFilePath.c_str());
 	return iniFilePath;
 }
 

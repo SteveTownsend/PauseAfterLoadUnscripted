@@ -40,7 +40,8 @@ private:
 
 	static std::unique_ptr<SettingsCache> m_instance;
 
-	inline static const char * SectionName = "Pause";
+	// SimpleIni normalizes to lowercase
+	inline static const char * SectionName = "pause";
 	inline static const char* IniFileName = "PauseAfterLoadUnscripted.ini";
 	static constexpr double DefaultResumeAfter = 3.0;
 	static constexpr double DefaultPausedSGTM = 0.001;
