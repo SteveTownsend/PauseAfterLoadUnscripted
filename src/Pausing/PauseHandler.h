@@ -158,15 +158,19 @@ private:
 		if (!dhnd)
 			return false;
 
-		// List MGEF with Slow Time archetype, save the ones with Value Modifier on Bow Speed Bonus
+		// Save MGEF with Slow Time archetype and with Value Modifier on Bow Speed Bonus.
+		// Constant Effects skipped to avoid inoperable state.
 		for (RE::EffectSetting* effect : dhnd->GetFormArray<RE::EffectSetting>())
 		{
-			if (effect->HasArchetype(RE::EffectSetting::Archetype::kSlowTime))
+			if (effect->HasArchetype(RE::EffectSetting::Archetype::kSlowTime) &&
+				effect->data.castingType != RE::MagicSystem::CastingType::kConstantEffect)
 			{
 				REL_VMESSAGE("SlowTime Magic Effect : {}({:08x})", effect->GetName(), effect->GetFormID());
+				_slowTimeEffects.insert(effect);
 			}
 			else if (effect->HasArchetype(RE::EffectSetting::Archetype::kValueModifier) &&
-				effect->data.primaryAV == RE::ActorValue::kBowSpeedBonus)
+				effect->data.primaryAV == RE::ActorValue::kBowSpeedBonus &&
+				effect->data.castingType != RE::MagicSystem::CastingType::kConstantEffect)
 			{
 				REL_VMESSAGE("ValueModifier-BowSpeedBonus Magic Effect : {}({:08x})", effect->GetName(), effect->GetFormID());
 				_slowTimeEffects.insert(effect);
@@ -179,20 +183,15 @@ private:
 
 	[[nodiscard]] bool IsSlowTimeEffectActive() const
 	{
-		if (RE::PlayerCharacter::GetSingleton()->HasEffectWithArchetype(RE::EffectSetting::Archetype::kSlowTime))
-		{
-			REL_DMESSAGE("Player subject to SlowTime archetype effect");
-			return true;
-		}
-		for (const auto effect : _slowTimeEffects)
+		return std::ranges::any_of(_slowTimeEffects, [=](auto effect) -> bool
 		{
 			if (RE::PlayerCharacter::GetSingleton()->HasMagicEffect(effect))
 			{
-				REL_DMESSAGE("Player subject to ValueModifier-BowSpeedBonus archetype effect");
+				REL_DMESSAGE("Player subject to non-constant-cast SlowTime or ValueModifier-BowSpeedBonus archetype effect");
 				return true;
 			}
-		}
-		return false;
+			return false;
+		});
 	}
 
 	void Unpause()
