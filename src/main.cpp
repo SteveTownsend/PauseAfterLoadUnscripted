@@ -54,8 +54,15 @@ void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 		}
 		break;
 
-#ifdef _DEBUG
 	// to confirm timings wrt Loading Menu handling
+	case SKSE::MessagingInterface::kPostLoad:
+		REL_MESSAGE("kPostLoad message");
+		break;
+
+	case SKSE::MessagingInterface::kPostPostLoad:
+		REL_MESSAGE("kPostPostLoad message");
+		break;
+
 	case SKSE::MessagingInterface::kPreLoadGame:
 		REL_MESSAGE("kPreLoadGame message");
 		break;
@@ -67,7 +74,6 @@ void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 	case SKSE::MessagingInterface::kNewGame:
 		REL_MESSAGE("kNewGame message");
 		break;
-#endif
 
 	default:
 		break;
@@ -199,7 +205,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
 		SKSE::PluginVersionData v;
 
 		// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
-		v.PluginVersion({ 1, 0, 0, 5 });
+		v.PluginVersion({ 1, 0, 0, 6 });
 		v.PluginName(PALU_NAME);
 		v.AuthorName(MOD_AUTHOR);
 		v.AuthorEmail(MOD_SUPPORT);

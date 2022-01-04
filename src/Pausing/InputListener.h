@@ -31,6 +31,13 @@ public:
 	{
 		if (a_event)
 		{
+			auto eventType(a_event->GetEventType());
+			if ((eventType == RE::INPUT_EVENT_TYPE::kButton && SettingsCache::Instance().IgnoreKeyPressAndButton()) ||
+				(eventType == RE::INPUT_EVENT_TYPE::kMouseMove && SettingsCache::Instance().IgnoreMouseMove()) ||
+				(eventType == RE::INPUT_EVENT_TYPE::kThumbstick && SettingsCache::Instance().IgnoreMouseMove()))
+			{
+				return;
+			}
 			REL_MESSAGE("Pause terminated by Input Event type {}", a_event->eventType.underlying());
 			resultHandler();
 		}
@@ -56,8 +63,13 @@ public:
 	InputListener& operator=(const InputListener&) = default;
 	InputListener& operator=(InputListener&&) = default;
 
-	void Enable()
+	void Enable(const double ignoreInput)
 	{
+		m_delayUnpause = ignoreInput > 0.0;
+		if (m_delayUnpause)
+		{
+			m_delayExpiry = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<long long>(ignoreInput * 1000.0));
+		}
 		auto input = RE::BSInputDeviceManager::GetSingleton();
 		if (input) {
 			input->AddEventSink(this);
@@ -76,7 +88,20 @@ private:
 	RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>*) override
 	{
 		if (a_event) {
-			(*_callback)(*a_event, _resultHandler);
+			if (m_delayUnpause)
+			{
+				std::chrono::milliseconds timeAfterExpiry(
+					std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_delayExpiry));
+				if (timeAfterExpiry.count() > 0)
+				{
+					m_delayUnpause = false;
+					REL_MESSAGE("CanUnpauseAfter timer expired {} milliseconds ago", timeAfterExpiry.count());
+				}
+			}
+			if (!m_delayUnpause)
+			{
+				(*_callback)(*a_event, _resultHandler);
+			}
 		}
 
 		return RE::BSEventNotifyControl::kContinue;
@@ -84,6 +109,8 @@ private:
 
 	std::unique_ptr<InputHandler> _callback;
 	std::function<void(void)> _resultHandler;
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_delayExpiry;
+	bool m_delayUnpause;
 };
 
 }

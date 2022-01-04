@@ -61,7 +61,8 @@ public:
 		if (_paused.compare_exchange_strong(expected, desired))
 		{
 			_paused = true;
-			_listener->Enable();
+			double ignoreInput(SettingsCache::Instance().CanUnpauseAfter());
+			_listener->Enable(ignoreInput);
 			ExecuteCommand(std::format("sgtm {:.3f}", SettingsCache::Instance().PausedSGTM()));
 			// Optionally, resume after configured delay
 			double delay(SettingsCache::Instance().ResumeAfter());
@@ -69,8 +70,8 @@ public:
 			bool desired2(true);
 			if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
 			{
-				REL_DMESSAGE("Resume game if no input for {:.1f} seconds", delay);
-				_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>(delay * 1000.0)));
+				REL_DMESSAGE("Resume game if no input for {:.1f} seconds, ignoring input for {:.1f} seconds", delay, ignoreInput);
+				_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>((delay + ignoreInput) * 1000.0)));
 				_timer.async_wait([this](const boost::system::error_code& ec) {
 					if (!ec)
 					{
@@ -86,10 +87,38 @@ public:
 				_thread.emplace(std::bind(&PauseHandler::IOService, this));
 			}
 		}
+		else
+		{
+			REL_WARNING("Already paused, ignore new request");
+		}
 	}
 
 protected:
 
+	/*
+	 * menu handling - on the first pass after launch, we do not get a menu-opened event and should not pause
+	 * on menu-closed event, so we use the menu-opened event to prime the menu-closed event
+	 *
+		2022-01-03 19:10:38.871     info  35716 Plugin Data load complete!
+		2022-01-03 19:10:38.871     info  35716 Initialized Data, Pause available
+		2022-01-03 19:10:39.176     info  41680 Loading Menu closed
+		2022-01-03 19:10:39.176     info  41680 OK to pause
+		2022-01-03 19:10:39.176    debug  41680 Ran Console command sgtm 0.001
+		2022-01-03 19:10:39.176    debug  41680 Resume game if no input for 10.0 seconds, ignoring input for 20.0 seconds
+		2022-01-03 19:10:39.177    debug  43452 Starting timer thread
+		2022-01-03 19:10:42.849     info  41680 kPreLoadGame message
+		2022-01-03 19:10:42.979     info  41680 Loading Menu opened
+		2022-01-03 19:10:44.813     info  41680 kPostLoadGame message
+		2022-01-03 19:10:56.182     info  41680 Loading Menu closed
+		2022-01-03 19:10:56.182     info  41680 OK to pause
+		2022-01-03 19:10:56.182  warning  41680 Already paused, ignore new request
+		2022-01-03 19:10:59.183     info  12576 CanUnpauseAfter timer expired 6 milliseconds ago
+		2022-01-03 19:11:01.120     info  12576 Pause terminated by Input Event type 0
+		2022-01-03 19:11:01.120    debug  12576 Cancel active pause timer
+		2022-01-03 19:11:01.120    debug  43452 Exiting timer thread
+		2022-01-03 19:11:01.120    debug  12576 Ran Console command sgtm 1.000
+	 *
+	 */
 	RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
 	{
 		auto intfcStr = RE::InterfaceStrings::GetSingleton();
@@ -98,34 +127,43 @@ protected:
 			a_event->menuName == intfcStr->loadingMenu) {
 			if (!a_event->opening)
 			{
-				// Loading Menu closed - need to pause
-				REL_MESSAGE("Loading Menu closed");
-				// check controls state
-				auto controls = RE::ControlMap::GetSingleton();
-				if (controls && controls->IsPOVSwitchControlsEnabled() &&
-					controls->IsFightingControlsEnabled() &&
-					// TODO map this over from the script
-					// Game.IsJournalControlsEnabled() &&
-					controls->IsLookingControlsEnabled() &&
-					controls->IsMenuControlsEnabled() &&
-					controls->IsMovementControlsEnabled() &&
-					controls->IsSneakingControlsEnabled())
+				// skip Pause() if this is first pass after process launch, per log output above
+				if (_canPause)
 				{
-					// If player is in Slow Time then do not pause
-					if (!IsSlowTimeEffectActive())
+					// Loading Menu closed - need to pause
+					REL_MESSAGE("Loading Menu closed after preceding Opened event - pause OK");
+					// check controls state
+					auto controls = RE::ControlMap::GetSingleton();
+					if (controls && controls->IsPOVSwitchControlsEnabled() &&
+						controls->IsFightingControlsEnabled() &&
+						// TODO map this over from the script
+						// Game.IsJournalControlsEnabled() &&
+						controls->IsLookingControlsEnabled() &&
+						controls->IsMenuControlsEnabled() &&
+						controls->IsMovementControlsEnabled() &&
+						controls->IsSneakingControlsEnabled())
 					{
-						REL_MESSAGE("OK to pause");
-						Pause();
+						// If player is in Slow Time then do not pause
+						if (!IsSlowTimeEffectActive())
+						{
+							REL_MESSAGE("OK to pause");
+							Pause();
+						}
 					}
+					_canPause = false;
+				}
+				else
+				{
+					REL_MESSAGE("Loading Menu closed without preceding Opened event - no pause");
 				}
 			}
-#ifdef _DEBUG
 			// to confirm timings wrt Loading Menu handling
 			else
 			{
 				REL_MESSAGE("Loading Menu opened");
+				// set the stage for Pause when the corresponding menu-closed arrives
+				_canPause = true;
 			}
-#endif
 		}
 
 		return RE::BSEventNotifyControl::kContinue;
@@ -187,7 +225,8 @@ private:
 		{
 			if (RE::PlayerCharacter::GetSingleton()->HasMagicEffect(effect))
 			{
-				REL_DMESSAGE("Player subject to non-constant-cast SlowTime or ValueModifier-BowSpeedBonus archetype effect");
+				REL_DMESSAGE("Player subject to non-constant-cast SlowTime or ValueModifier-BowSpeedBonus archetype effect : {}({:08x})",
+					effect->GetName(), effect->GetFormID());
 				return true;
 			}
 			return false;
@@ -214,6 +253,10 @@ private:
 			// Resume game at normal speed
 			ExecuteCommand(std::format("sgtm {:.3f}", SettingsCache::Instance().NormalSGTM()));
 		}
+		else
+		{
+			REL_WARNING("Already unpaused, ignore new request");
+		}
 	}
 
 	void ExecuteCommand(std::string a_command)
@@ -237,6 +280,8 @@ private:
 	}
 
 	std::unique_ptr<InputListener> _listener;
+	// indicates not first pass after launch - menu-closed must be preceded by menu-opened
+	bool _canPause{ false };
 	// acts as a guard for event sink management
 	std::atomic<bool> _paused{ false };
 	std::atomic<bool> _delayed{ false };
