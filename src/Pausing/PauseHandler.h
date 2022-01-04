@@ -221,16 +221,32 @@ private:
 
 	[[nodiscard]] bool IsSlowTimeEffectActive() const
 	{
-		return std::ranges::any_of(_slowTimeEffects, [=](auto effect) -> bool
-		{
-			if (RE::PlayerCharacter::GetSingleton()->HasMagicEffect(effect))
+		// Use active effects directly - CLSSE has no appropriate function
+		auto effects = RE::PlayerCharacter::GetSingleton()->GetActiveEffectList();
+		if (!effects) {
+			return false;
+		}
+
+		RE::EffectSetting* setting = nullptr;
+		for (auto& effect : *effects) {
+			setting = effect ? effect->GetBaseObject() : nullptr;
+			if (!setting)
+				continue;
+			if (_slowTimeEffects.contains(setting))
 			{
-				REL_DMESSAGE("Player subject to non-constant-cast SlowTime or ValueModifier-BowSpeedBonus archetype effect : {}({:08x})",
-					effect->GetName(), effect->GetFormID());
+				// Inactive effects should not prevent Pause
+				if (effect->flags.any(RE::ActiveEffect::Flag::kInactive))
+				{
+					REL_DMESSAGE("Skip Inactive SlowTime or ValueModifier-BowSpeedBonus archetype effect : {}({:08x})",
+						setting->GetName(), setting->GetFormID());
+					continue;
+				}
+				REL_DMESSAGE("Player subject to Active non-constant-cast SlowTime or ValueModifier-BowSpeedBonus archetype effect : {}({:08x})",
+					setting->GetName(), setting->GetFormID());
 				return true;
 			}
-			return false;
-		});
+		}
+		return false;
 	}
 
 	void Unpause()
