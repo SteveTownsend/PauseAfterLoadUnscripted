@@ -64,10 +64,6 @@ void SettingsCache::Refresh(void)
 	REL_VMESSAGE("CanUnpauseAfter = {:.1f} seconds", _canUnpauseAfter);
 	_pauseOnSave = ini.GetValue<bool>(SectionName, "pauseonsave", DefaultPauseOnSave);
 	REL_VMESSAGE("PauseOnSave = {}", _pauseOnSave);
-	_pausedSGTM = ini.GetValue<double>(SectionName, "pausedsgtm", DefaultPausedSGTM);
-	REL_VMESSAGE("PausedSGTM = {:.3f}", _pausedSGTM);
-	_normalSGTM = ini.GetValue<double>(SectionName, "normalsgtm", DefaultNormalSGTM);
-	REL_VMESSAGE("NormalSGTM = {:.3f}", _normalSGTM);
 	_ignoreKeyPressAndButton = ini.GetValue<bool>(SectionName, "ignorekeypressandbutton", DefaultIgnoreKeyPressAndButton);
 	REL_VMESSAGE("IgnoreKeyPressAndButton = {}", _ignoreKeyPressAndButton);
 	_ignoreMouseMove = ini.GetValue<bool>(SectionName, "ignoremousemove", DefaultIgnoreMouseMove);

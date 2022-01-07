@@ -34,11 +34,12 @@ public:
 			auto eventType(a_event->GetEventType());
 			if ((eventType == RE::INPUT_EVENT_TYPE::kButton && SettingsCache::Instance().IgnoreKeyPressAndButton()) ||
 				(eventType == RE::INPUT_EVENT_TYPE::kMouseMove && SettingsCache::Instance().IgnoreMouseMove()) ||
-				(eventType == RE::INPUT_EVENT_TYPE::kThumbstick && SettingsCache::Instance().IgnoreMouseMove()))
+				(eventType == RE::INPUT_EVENT_TYPE::kThumbstick && SettingsCache::Instance().IgnoreThumbstick()))
 			{
 				return;
 			}
-			REL_MESSAGE("Pause terminated by Input Event type {}", a_event->eventType.underlying());
+			REL_MESSAGE("Pause terminated by Input Event type {} from Device {}",
+				a_event->eventType.underlying(), a_event->device.underlying());
 			resultHandler();
 		}
 	}
@@ -63,16 +64,20 @@ public:
 	InputListener& operator=(const InputListener&) = default;
 	InputListener& operator=(InputListener&&) = default;
 
-	void Enable(const double ignoreInput)
+	void Enable()
 	{
-		m_delayUnpause = ignoreInput > 0.0;
-		if (m_delayUnpause)
-		{
-			m_delayExpiry = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<long long>(ignoreInput * 1000.0));
-		}
 		auto input = RE::BSInputDeviceManager::GetSingleton();
 		if (input) {
 			input->AddEventSink(this);
+		}
+	}
+
+	void PrepareToUnpause(const double ignoreInput)
+	{
+		_delayUnpause = ignoreInput > 0.0;
+		if (_delayUnpause)
+		{
+			_delayExpiry = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<long long>(ignoreInput * 1000.0));
 		}
 	}
 
@@ -87,18 +92,18 @@ public:
 private:
 	RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>*) override
 	{
-		if (a_event) {
-			if (m_delayUnpause)
+		if (a_event && *a_event) {
+			if (_delayUnpause)
 			{
-				std::chrono::milliseconds timeAfterExpiry(
-					std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_delayExpiry));
+				const std::chrono::milliseconds timeAfterExpiry(
+					std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - _delayExpiry));
 				if (timeAfterExpiry.count() > 0)
 				{
-					m_delayUnpause = false;
+					_delayUnpause = false;
 					REL_MESSAGE("CanUnpauseAfter timer expired {} milliseconds ago", timeAfterExpiry.count());
 				}
 			}
-			if (!m_delayUnpause)
+			if (!_delayUnpause)
 			{
 				(*_callback)(*a_event, _resultHandler);
 			}
@@ -109,8 +114,8 @@ private:
 
 	std::unique_ptr<InputHandler> _callback;
 	std::function<void(void)> _resultHandler;
-	std::chrono::time_point<std::chrono::high_resolution_clock> m_delayExpiry;
-	bool m_delayUnpause;
+	std::chrono::time_point<std::chrono::high_resolution_clock> _delayExpiry;
+	bool _delayUnpause{ false };
 };
 
 }

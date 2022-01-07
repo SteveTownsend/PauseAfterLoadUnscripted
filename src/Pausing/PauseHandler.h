@@ -54,42 +54,87 @@ public:
 	PauseHandler& operator=(const PauseHandler&) = default;
 	PauseHandler& operator=(PauseHandler&&) = default;
 
-	void Pause()
+	bool StartPause()
 	{
-		bool expected(false);
-		bool desired(true);
-		if (_paused.compare_exchange_strong(expected, desired))
+		bool result(false);
+
+		// check controls state
+		auto controls = RE::ControlMap::GetSingleton();
+		if (!controls)
 		{
-			_paused = true;
-			double ignoreInput(SettingsCache::Instance().CanUnpauseAfter());
-			_listener->Enable(ignoreInput);
-			ExecuteCommand(std::format("sgtm {:.3f}", SettingsCache::Instance().PausedSGTM()));
-			// Optionally, resume after configured delay
-			double delay(SettingsCache::Instance().ResumeAfter());
-			bool expected2(false);
-			bool desired2(true);
-			if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
+			REL_ERROR("ControlMap Singleton not valid");
+			return false;
+		}
+		if (controls->IsPOVSwitchControlsEnabled() &&
+			controls->IsFightingControlsEnabled() &&
+			// TODO map this over from the script
+			// Game.IsJournalControlsEnabled() &&
+			controls->IsLookingControlsEnabled() &&
+			controls->IsMenuControlsEnabled() &&
+			controls->IsMovementControlsEnabled() &&
+			controls->IsSneakingControlsEnabled())
+		{
+			// If player is in Slow Time then do not pause
+			if (!IsSlowTimeEffectActive())
 			{
-				REL_DMESSAGE("Resume game if no input for {:.1f} seconds, ignoring input for {:.1f} seconds", delay, ignoreInput);
-				_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>((delay + ignoreInput) * 1000.0)));
-				_timer.async_wait([this](const boost::system::error_code& ec) {
-					if (!ec)
-					{
-						REL_DMESSAGE("Pause timed out - restart game");
-						Unpause();
-					}
-				});
-				// Start IO Service to handle timer
-				if (_thread.has_value())
+				bool expected(false);
+				bool desired(true);
+				if (_paused.compare_exchange_strong(expected, desired))
 				{
-					_thread.reset();
+					REL_MESSAGE("OK to freeze time");
+					result = true;
+
+					// Activate InputHandler here, blocks input until ProgressPause called
+					_listener->Enable();
+
+					// pause game using CLSSE 'easy button'
+					RE::Main::GetSingleton()->freezeTime = true;
 				}
-				_thread.emplace(std::bind(&PauseHandler::IOService, this));
+				else
+				{
+					REL_WARNING("Already paused, ignore new request");
+				}
 			}
 		}
 		else
 		{
-			REL_WARNING("Already paused, ignore new request");
+			REL_WARNING("Controls-Enabled State not all true: fighting {} looking {} menu {} movement {} sneaking {}",
+				controls->IsFightingControlsEnabled(),
+				controls->IsLookingControlsEnabled(),
+				controls->IsMenuControlsEnabled(),
+				controls->IsMovementControlsEnabled(),
+				controls->IsSneakingControlsEnabled());
+		}
+		return result;
+	}
+
+	void ProgressPause()
+	{
+		// allow input listener to filter without blocking all
+		const double ignoreInput(SettingsCache::Instance().CanUnpauseAfter());
+		_listener->PrepareToUnpause(ignoreInput);
+
+		// Optionally, resume after configured delay
+		double delay(SettingsCache::Instance().ResumeAfter());
+		bool expected2(false);
+		bool desired2(true);
+		if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
+		{
+			REL_DMESSAGE("Resume game if no input for {:.1f} seconds, ignoring input for {:.1f} seconds", delay, ignoreInput);
+			_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>((delay + ignoreInput) * 1000.0)));
+			_timer.async_wait([this](const boost::system::error_code& ec) {
+				if (!ec)
+				{
+					REL_DMESSAGE("Pause timed out");
+					Unpause();
+				}
+			});
+			// Start IO Service to handle timer
+			if (_thread.has_value())
+			{
+				_thread.reset();
+			}
+			_thread.emplace(std::bind(&PauseHandler::IOService, this));
 		}
 	}
 
@@ -127,29 +172,12 @@ protected:
 			a_event->menuName == intfcStr->loadingMenu) {
 			if (!a_event->opening)
 			{
-				// skip Pause() if this is first pass after process launch, per log output above
+				// skip ProgressPause() if this is first pass after process launch, per log output above
 				if (_canPause)
 				{
 					// Loading Menu closed - need to pause
 					REL_MESSAGE("Loading Menu closed after preceding Opened event - pause OK");
-					// check controls state
-					auto controls = RE::ControlMap::GetSingleton();
-					if (controls && controls->IsPOVSwitchControlsEnabled() &&
-						controls->IsFightingControlsEnabled() &&
-						// TODO map this over from the script
-						// Game.IsJournalControlsEnabled() &&
-						controls->IsLookingControlsEnabled() &&
-						controls->IsMenuControlsEnabled() &&
-						controls->IsMovementControlsEnabled() &&
-						controls->IsSneakingControlsEnabled())
-					{
-						// If player is in Slow Time then do not pause
-						if (!IsSlowTimeEffectActive())
-						{
-							REL_MESSAGE("OK to pause");
-							Pause();
-						}
-					}
+					ProgressPause();
 					_canPause = false;
 				}
 				else
@@ -160,9 +188,9 @@ protected:
 			// to confirm timings wrt Loading Menu handling
 			else
 			{
-				REL_MESSAGE("Loading Menu opened");
 				// set the stage for Pause when the corresponding menu-closed arrives
-				_canPause = true;
+				_canPause = StartPause();
+				REL_MESSAGE("Loading Menu opened - pause OK {}", _canPause);
 			}
 		}
 
@@ -241,7 +269,7 @@ private:
 						setting->GetName(), setting->GetFormID());
 					continue;
 				}
-				REL_DMESSAGE("Player subject to Active non-constant-cast SlowTime or ValueModifier-BowSpeedBonus archetype effect : {}({:08x})",
+				REL_WARNING("Player subject to Active non-constant-cast SlowTime or ValueModifier-BowSpeedBonus archetype effect : {}({:08x})",
 					setting->GetName(), setting->GetFormID());
 				return true;
 			}
@@ -264,26 +292,14 @@ private:
 		bool desired2(false);
 		if (_paused.compare_exchange_strong(expected2, desired2))
 		{
-			_paused = false;
+			REL_DMESSAGE("Restart game");
 			_listener->Disable();
-			// Resume game at normal speed
-			ExecuteCommand(std::format("sgtm {:.3f}", SettingsCache::Instance().NormalSGTM()));
+			// Resume game
+			RE::Main::GetSingleton()->freezeTime = false;
 		}
 		else
 		{
 			REL_WARNING("Already unpaused, ignore new request");
-		}
-	}
-
-	void ExecuteCommand(std::string a_command)
-	{
-		const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
-		const std::unique_ptr<RE::Script> script(scriptFactory ? scriptFactory->Create() : nullptr);
-		if (script) {
-			const RE::NiPointer<RE::TESObjectREFR> selectedRef;
-			script->SetCommand(a_command);
-			script->CompileAndRun(selectedRef.get());
-			REL_DMESSAGE("Ran Console command {}", a_command);
 		}
 	}
 

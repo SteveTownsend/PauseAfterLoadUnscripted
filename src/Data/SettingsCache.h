@@ -35,9 +35,6 @@ public:
 	[[nodiscard]] double CanUnpauseAfter() const { return _canUnpauseAfter; }
 	//optional pause-on-save
 	[[nodiscard]] bool PauseOnSave() const { return _pauseOnSave; }
-	// Pause and Resume values for sgtm
-	[[nodiscard]] double PausedSGTM() const { return _pausedSGTM; }
-	[[nodiscard]] double NormalSGTM() const { return _normalSGTM; }
 	// input filtering
 	[[nodiscard]] bool IgnoreKeyPressAndButton() const { return _ignoreKeyPressAndButton; }
 	[[nodiscard]] bool IgnoreMouseMove() const { return _ignoreMouseMove; }
@@ -51,10 +48,8 @@ private:
 	// SimpleIni normalizes to lowercase
 	inline static const char * SectionName = "pause";
 	inline static const char* IniFileName = "PauseAfterLoadUnscripted.ini";
-	static constexpr double DefaultResumeAfter = 3.0;
+	static constexpr double DefaultResumeAfter = 5.0;
 	static constexpr double DefaultCanUnpauseAfter = 0.0;
-	static constexpr double DefaultPausedSGTM = 0.001;
-	static constexpr double DefaultNormalSGTM = 1.0;
 	static constexpr bool DefaultPauseOnSave = false;
 	static constexpr bool DefaultIgnoreKeyPressAndButton = false;
 	static constexpr bool DefaultIgnoreMouseMove = true;
@@ -62,8 +57,6 @@ private:
 
 	double _resumeAfter = DefaultResumeAfter;
 	double _canUnpauseAfter = DefaultCanUnpauseAfter;
-	double _pausedSGTM = DefaultPausedSGTM;
-	double _normalSGTM = DefaultNormalSGTM;
 	bool _pauseOnSave = DefaultPauseOnSave;
 	bool _ignoreKeyPressAndButton = DefaultIgnoreKeyPressAndButton;
 	bool _ignoreMouseMove = DefaultIgnoreMouseMove;
