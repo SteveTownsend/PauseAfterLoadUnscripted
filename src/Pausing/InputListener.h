@@ -72,7 +72,7 @@ public:
 		}
 	}
 
-	void PrepareToUnpause(const double ignoreInput)
+	void SetDelay(const double ignoreInput)
 	{
 		_delayUnpause = ignoreInput > 0.0;
 		if (_delayUnpause)

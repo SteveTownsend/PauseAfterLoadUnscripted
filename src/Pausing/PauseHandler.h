@@ -58,83 +58,87 @@ public:
 	{
 		bool result(false);
 
-		// check controls state
-		auto controls = RE::ControlMap::GetSingleton();
-		if (!controls)
+		// If player is in Slow Time then do not pause
+		if (!IsSlowTimeEffectActive())
 		{
-			REL_ERROR("ControlMap Singleton not valid");
-			return false;
-		}
-		if (controls->IsPOVSwitchControlsEnabled() &&
-			controls->IsFightingControlsEnabled() &&
-			// TODO map this over from the script
-			// Game.IsJournalControlsEnabled() &&
-			controls->IsLookingControlsEnabled() &&
-			controls->IsMenuControlsEnabled() &&
-			controls->IsMovementControlsEnabled() &&
-			controls->IsSneakingControlsEnabled())
-		{
-			// If player is in Slow Time then do not pause
-			if (!IsSlowTimeEffectActive())
+			bool expected(false);
+			bool desired(true);
+			if (_paused.compare_exchange_strong(expected, desired))
 			{
-				bool expected(false);
-				bool desired(true);
-				if (_paused.compare_exchange_strong(expected, desired))
-				{
-					REL_MESSAGE("OK to freeze time");
-					result = true;
+				REL_MESSAGE("OK to freeze time");
+				result = true;
 
-					// Activate InputHandler here, blocks input until ProgressPause called
-					_listener->Enable();
-
-					// pause game using CLSSE 'easy button'
-					RE::Main::GetSingleton()->freezeTime = true;
-				}
-				else
-				{
-					REL_WARNING("Already paused, ignore new request");
-				}
+				// pause game using CLSSE 'easy button'
+				RE::Main::GetSingleton()->freezeTime = true;
 			}
-		}
-		else
-		{
-			REL_WARNING("Controls-Enabled State not all true: fighting {} looking {} menu {} movement {} sneaking {}",
-				controls->IsFightingControlsEnabled(),
-				controls->IsLookingControlsEnabled(),
-				controls->IsMenuControlsEnabled(),
-				controls->IsMovementControlsEnabled(),
-				controls->IsSneakingControlsEnabled());
+			else
+			{
+				REL_WARNING("Already paused, ignore new request");
+			}
 		}
 		return result;
 	}
 
 	void ProgressPause()
 	{
-		// allow input listener to filter without blocking all
-		const double ignoreInput(SettingsCache::Instance().CanUnpauseAfter());
-		_listener->PrepareToUnpause(ignoreInput);
-
-		// Optionally, resume after configured delay
-		double delay(SettingsCache::Instance().ResumeAfter());
-		bool expected2(false);
-		bool desired2(true);
-		if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
+		// check controls state
+		auto controls = RE::ControlMap::GetSingleton();
+		if (!controls)
 		{
-			REL_DMESSAGE("Resume game if no input for {:.1f} seconds, ignoring input for {:.1f} seconds", delay, ignoreInput);
-			_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>((delay + ignoreInput) * 1000.0)));
-			_timer.async_wait([this](const boost::system::error_code& ec) {
-				if (!ec)
-				{
-					REL_DMESSAGE("Pause timed out");
-					Unpause();
-				}
-			});
-			// Start IO Service to handle timer
-			if (_thread.has_value())
+			REL_ERROR("ControlMap Singleton not valid");
+			Unpause();
+			return;
+		}
+		if (controls->IsPOVSwitchControlsEnabled() &&
+			controls->IsFightingControlsEnabled() &&
+			// mapped this over from the script, see https://github.com/SteveTownsend/PauseAfterLoadUnscripted/issues/12
+			// Game.IsJournalControlsEnabled() &&
+			controls->IsMainFourControlsEnabled() &&
+			controls->IsLookingControlsEnabled() &&
+			controls->IsMenuControlsEnabled() &&
+			controls->IsMovementControlsEnabled() &&
+			controls->IsSneakingControlsEnabled())
+		{
+			// prepare Input Listener to block, if configured
+			const double ignoreInput(SettingsCache::Instance().CanUnpauseAfter());
+			_listener->SetDelay(ignoreInput);
+
+			// Activate InputHandler here - blocks input until any configured delay expires
+			_listener->Enable();
+
+			// Optionally, resume after configured delay
+			double delay(SettingsCache::Instance().ResumeAfter());
+			bool expected2(false);
+			bool desired2(true);
+			if (delay > 0.0 && _delayed.compare_exchange_strong(expected2, desired2))
 			{
-				_thread.reset();
+				REL_DMESSAGE("Resume game if no input for {:.1f} seconds, ignoring input for {:.1f} seconds", delay, ignoreInput);
+				_timer.expires_from_now(boost::posix_time::millisec(static_cast<int>((delay + ignoreInput) * 1000.0)));
+				_timer.async_wait([this](const boost::system::error_code& ec) {
+					if (!ec)
+					{
+						REL_DMESSAGE("Pause timed out");
+						Unpause();
+					}
+				});
+				// Start IO Service to handle timer
+				if (_thread.has_value())
+				{
+					_thread.reset();
+				}
+				_thread.emplace(std::bind(&PauseHandler::IOService, this));
 			}
-			_thread.emplace(std::bind(&PauseHandler::IOService, this));
+		}
+		else
+		{
+			REL_WARNING("Controls-Enabled State not all true: fighting {} looking {} journal {} menu {} movement {} sneaking {}",
+				controls->IsFightingControlsEnabled(),
+				controls->IsLookingControlsEnabled(),
+				controls->IsMainFourControlsEnabled(),
+				controls->IsMenuControlsEnabled(),
+				controls->IsMovementControlsEnabled(),
+				controls->IsSneakingControlsEnabled());
+			Unpause();
 		}
 	}
 
