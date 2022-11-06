@@ -60,10 +60,22 @@ void SettingsCache::Refresh(void)
 	// SimpleIni normalizes names to lowercase
 	_resumeAfter = ini.GetValue<double>(SectionName, "resumeafter", DefaultResumeAfter);
 	REL_VMESSAGE("ResumeAfter = {:.1f} seconds", _resumeAfter);
-	_pausedSGTM = ini.GetValue<double>(SectionName, "pausedsgtm", DefaultPausedSGTM);
-	REL_VMESSAGE("PausedSGTM = {:.3f}", _pausedSGTM);
-	_normalSGTM = ini.GetValue<double>(SectionName, "normalsgtm", DefaultNormalSGTM);
-	REL_VMESSAGE("NormalSGTM = {:.3f}", _normalSGTM);
+	_canUnpauseAfter = ini.GetValue<double>(SectionName, "canunpauseafter", DefaultCanUnpauseAfter);
+	REL_VMESSAGE("CanUnpauseAfter = {:.1f} seconds", _canUnpauseAfter);
+	_pauseOnSave = ini.GetValue<bool>(SectionName, "pauseonsave", DefaultPauseOnSave);
+	REL_VMESSAGE("PauseOnSave = {}", _pauseOnSave);
+	_ignoreKeyPressAndButton = ini.GetValue<bool>(SectionName, "ignorekeypressandbutton", DefaultIgnoreKeyPressAndButton);
+	REL_VMESSAGE("IgnoreKeyPressAndButton = {}", _ignoreKeyPressAndButton);
+	_ignoreMouseMove = ini.GetValue<bool>(SectionName, "ignoremousemove", DefaultIgnoreMouseMove);
+	REL_VMESSAGE("IgnoreMouseMove = {}", _ignoreMouseMove);
+	_ignoreThumbstick = ini.GetValue<bool>(SectionName, "ignorethumbstick", DefaultIgnoreThumbstick);
+	REL_VMESSAGE("IgnoreThumbstick = {}", _ignoreThumbstick);
+	if (_ignoreKeyPressAndButton && _ignoreMouseMove && _ignoreThumbstick && _resumeAfter == 0.0)
+	{
+		// all user input disallowed - must configure auto-resume
+		REL_VMESSAGE("Override ResumeAfter - all user input disallowed");
+		_resumeAfter = DefaultResumeAfter;
+	}
 }
 
 const std::string SettingsCache::GetFileName() const

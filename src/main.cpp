@@ -22,7 +22,9 @@ http://www.fsf.org/licensing/licenses
 #include "Data/SettingsCache.h"
 #include "Pausing/PauseHandler.h"
 #include "Utilities/version.h"
+#if _DEBUG
 #include "Utilities/LogStackWalker.h"
+#endif
 
 #include <ShlObj.h>
 #include <filesystem>
@@ -43,11 +45,30 @@ void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 	{
 	case SKSE::MessagingInterface::kDataLoaded:
 		pauseHandler.emplace();
-		REL_MESSAGE("Initialized Data, Pause available");
+		REL_MESSAGE("kDataLoaded Message - Pause available");
 		break;
 
-#ifdef _DEBUG
+	case SKSE::MessagingInterface::kSaveGame:
+		if (palu::SettingsCache::Instance().PauseOnSave())
+		{
+			REL_MESSAGE("Request Pause on kSaveGame message");
+			if (pauseHandler.value().StartPause())
+			{
+				// no delay before progressing
+				pauseHandler.value().ProgressPause();
+			}
+		}
+		break;
+
 	// to confirm timings wrt Loading Menu handling
+	case SKSE::MessagingInterface::kPostLoad:
+		REL_MESSAGE("kPostLoad message");
+		break;
+
+	case SKSE::MessagingInterface::kPostPostLoad:
+		REL_MESSAGE("kPostPostLoad message");
+		break;
+
 	case SKSE::MessagingInterface::kPreLoadGame:
 		REL_MESSAGE("kPreLoadGame message");
 		break;
@@ -59,7 +80,6 @@ void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 	case SKSE::MessagingInterface::kNewGame:
 		REL_MESSAGE("kNewGame message");
 		break;
-#endif
 
 	default:
 		break;
@@ -191,7 +211,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
 		SKSE::PluginVersionData v;
 
 		// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
-		v.PluginVersion({ 1, 0, 0, 2 });
+		v.PluginVersion({ 1, 0, 0, 9 });
 		v.PluginName(PALU_NAME);
 		v.AuthorName(MOD_AUTHOR);
 		v.AuthorEmail(MOD_SUPPORT);
@@ -203,6 +223,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
 			SKSE::RUNTIME_1_6_318,
 			SKSE::RUNTIME_1_6_323,
 			SKSE::RUNTIME_1_6_342,
+			SKSE::RUNTIME_1_6_343,
 			SKSE::RUNTIME_LATEST });
 
 		return v;

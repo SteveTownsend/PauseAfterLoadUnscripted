@@ -31,7 +31,15 @@ public:
 	{
 		if (a_event)
 		{
-			REL_MESSAGE("Pause terminated by Input Event type {}", a_event->eventType.underlying());
+			auto eventType(a_event->GetEventType());
+			if ((eventType == RE::INPUT_EVENT_TYPE::kButton && SettingsCache::Instance().IgnoreKeyPressAndButton()) ||
+				(eventType == RE::INPUT_EVENT_TYPE::kMouseMove && SettingsCache::Instance().IgnoreMouseMove()) ||
+				(eventType == RE::INPUT_EVENT_TYPE::kThumbstick && SettingsCache::Instance().IgnoreThumbstick()))
+			{
+				return;
+			}
+			REL_MESSAGE("Pause terminated by Input Event type {} from Device {}",
+				a_event->eventType.underlying(), a_event->device.underlying());
 			resultHandler();
 		}
 	}
@@ -64,6 +72,15 @@ public:
 		}
 	}
 
+	void SetDelay(const double ignoreInput)
+	{
+		_delayUnpause = ignoreInput > 0.0;
+		if (_delayUnpause)
+		{
+			_delayExpiry = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<long long>(ignoreInput * 1000.0));
+		}
+	}
+
 	void Disable()
 	{
 		auto input = RE::BSInputDeviceManager::GetSingleton();
@@ -75,8 +92,21 @@ public:
 private:
 	RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>*) override
 	{
-		if (a_event) {
-			(*_callback)(*a_event, _resultHandler);
+		if (a_event && *a_event) {
+			if (_delayUnpause)
+			{
+				const std::chrono::milliseconds timeAfterExpiry(
+					std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - _delayExpiry));
+				if (timeAfterExpiry.count() > 0)
+				{
+					_delayUnpause = false;
+					REL_MESSAGE("CanUnpauseAfter timer expired {} milliseconds ago", timeAfterExpiry.count());
+				}
+			}
+			if (!_delayUnpause)
+			{
+				(*_callback)(*a_event, _resultHandler);
+			}
 		}
 
 		return RE::BSEventNotifyControl::kContinue;
@@ -84,6 +114,8 @@ private:
 
 	std::unique_ptr<InputHandler> _callback;
 	std::function<void(void)> _resultHandler;
+	std::chrono::time_point<std::chrono::high_resolution_clock> _delayExpiry;
+	bool _delayUnpause{ false };
 };
 
 }
