@@ -41,13 +41,13 @@ public:
 	[[nodiscard]] bool IgnoreThumbstick() const { return _ignoreThumbstick; }
 
 private:
-	const std::string GetFileName() const;
+	const std::wstring GetFileName() const;
 
 	static std::unique_ptr<SettingsCache> m_instance;
 
 	// SimpleIni normalizes to lowercase
 	inline static const char * SectionName = "pause";
-	inline static const char* IniFileName = "PauseAfterLoadUnscripted.ini";
+	inline static const wchar_t* IniFileName = L"PauseAfterLoadUnscripted.ini";
 	static constexpr double DefaultResumeAfter = 5.0;
 	static constexpr double DefaultCanUnpauseAfter = 0.0;
 	static constexpr bool DefaultPauseOnSave = false;

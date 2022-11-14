@@ -19,7 +19,9 @@ http://www.fsf.org/licensing/licenses
 *************************************************************************/
 #pragma once
 
+#if 0
 #include <shlobj.h>
+#endif
 
 constexpr RE::FormID ClothKeyword = 0x06BBE8;
 constexpr RE::FormID CurrentFollowerFaction = 0x0005C84E;
@@ -30,9 +32,9 @@ constexpr double DistanceUnitInMiles = DistanceUnitInFeet / FeetPerMile;
 
 namespace FileUtils
 {
-	std::string GetGamePath(void);
-	std::string GetPluginFileName(void) noexcept;
-	std::string GetPluginPath(void) noexcept;
+	std::wstring GetGamePath(void);
+	std::wstring GetPluginFileName(void) noexcept;
+	std::wstring GetPluginPath(void) noexcept;
 	inline bool CanOpenFile(const char* fileName)
 	{
 		std::ifstream ifs(fileName);
@@ -95,4 +97,9 @@ namespace FormUtils
 	{
 		return form && form->GetPlayable() && !std::string(form->GetName()).empty();
 	}
+}
+
+namespace StringUtils
+{
+	std::string FromUnicode(const std::wstring& input);
 }

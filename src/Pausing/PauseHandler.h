@@ -254,7 +254,8 @@ private:
 	[[nodiscard]] bool IsSlowTimeEffectActive() const
 	{
 		// Use active effects directly - CLSSE has no appropriate function
-		auto effects = RE::PlayerCharacter::GetSingleton()->GetActiveEffectList();
+		auto target = RE::PlayerCharacter::GetSingleton()->AsMagicTarget();
+		auto effects = target ? target->GetActiveEffectList() : nullptr;
 		if (!effects) {
 			return false;
 		}

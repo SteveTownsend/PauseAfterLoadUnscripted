@@ -40,14 +40,14 @@ SettingsCache& SettingsCache::Instance()
 void SettingsCache::Refresh(void)
 {
 	SimpleIni ini;
-	const std::string inFile(GetFileName());
-	if (!ini.Load(inFile))
+	const std::wstring inFile(GetFileName());
+	if (!ini.Load(StringUtils::FromUnicode(inFile)))
 	{
-		REL_WARNING("Settings cache load from {} failed, using defaults", inFile.c_str());
+		REL_WARNING("Settings cache load from {} failed, using defaults", StringUtils::FromUnicode(inFile));
 	}
 	else
 	{
-		REL_MESSAGE("Refresh settings cache from valid file {}", inFile.c_str());
+		REL_MESSAGE("Refresh settings cache from valid file {}", StringUtils::FromUnicode(inFile));
 		for (auto section = ini.beginSection(); section != ini.endSection(); ++section)
 		{
 			DBG_MESSAGE("Section {}", *section);
@@ -78,14 +78,14 @@ void SettingsCache::Refresh(void)
 	}
 }
 
-const std::string SettingsCache::GetFileName() const
+const std::wstring SettingsCache::GetFileName() const
 {
-	std::string iniFilePath;
-	std::string RuntimeDir = FileUtils::GetGamePath();
+	std::wstring iniFilePath;
+	std::wstring RuntimeDir = FileUtils::GetGamePath();
 	if (RuntimeDir.empty())
-		return "";
+		return L"";
 
-	iniFilePath = RuntimeDir + "Data\\SKSE\\Plugins\\" + IniFileName;
+	iniFilePath = RuntimeDir + L"Data\\SKSE\\Plugins\\" + IniFileName;
 	return iniFilePath;
 }
 

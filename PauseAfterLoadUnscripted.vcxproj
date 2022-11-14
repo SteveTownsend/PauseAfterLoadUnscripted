@@ -455,7 +455,14 @@
   <ItemGroup>
     <None Include="Batch\build-AE-artifacts-rar.bat" />
     <None Include="Batch\build-artifacts-rar.bat" />
+    <None Include="CMakePresets.json" />
+    <None Include="cmake\archive_artifacts.cmake" />
+    <None Include="cmake\PluginInfo.h.in" />
+    <None Include="cmake\version.rc.in" />
     <None Include="Config\PauseAfterLoadUnscripted.ini" />
+    <None Include="scripts\archive_artifacts.py" />
+    <None Include="vcpkg-configuration.json" />
+    <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommonLibSSE\CommonLibSSE.vcxproj">
@@ -468,6 +475,9 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PauseAfterLoadUnscripted.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
