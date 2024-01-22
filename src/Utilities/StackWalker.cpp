@@ -88,7 +88,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>
-//#include <windows.h>
 //#pragma comment(lib, "version.lib") // for "VerQueryValue"
 #pragma warning(disable : 4826)
 

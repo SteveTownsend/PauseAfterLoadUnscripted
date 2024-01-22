@@ -1,15 +1,16 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.27)
 
 # #######################################################################################################################
 # # Define project
 # #######################################################################################################################
 set(NAME "PauseAfterLoadUnscripted")
-set(VERSION 1.1.0)
+set(VERSION 1.1.1)
 
+message("${CMAKE_SIZEOF_VOID_P}")
 project(
         ${NAME}
         VERSION ${VERSION}
-        DESCRIPTION "SKSE/SKSEVR plugin that generates crash logs when the game Just Works™."
+        DESCRIPTION "SKSE/SKSEVR plugin that generates crash logs when the game Just Worksï¿½."
         LANGUAGES CXX)
 set(PROJECT_FRIENDLY_NAME "PauseAfterLoadUnscripted NG")
 set(CMAKE_CXX_STANDARD 23)
@@ -42,8 +43,8 @@ set(sources
         src/Utilities/version.cpp
         src/Utilities/version.h
         src/main.cpp
-        src/PrecompiledHeaders.cpp
-        src/PrecompiledHeaders.h
+#        src/PrecompiledHeaders.cpp
+#        src/PrecompiledHeaders.h
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
 )
 
@@ -75,6 +76,16 @@ if(WIN32)
                 NOMINMAX
                 _AMD64_
                 WIN32_LEAN_AND_MEAN)
+        if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+                add_compile_definitions(
+                        _FULL_LOGGING
+                )
+        endif()
+
+        add_compile_options(
+                "/Zc:preprocessor"
+                "/std:c++latest"
+        )
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -124,10 +135,10 @@ target_precompile_headers(${PROJECT_NAME}
         PRIVATE
         src/PrecompiledHeaders.h)
 
-#set_source_files_properties(
-#    src/Utilities/utils.cpp
-#    src/Utilities/version.cpp
-#    PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(
+    src/Utilities/utils.cpp
+    src/Utilities/version.cpp
+    PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/Sample"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
@@ -140,7 +151,7 @@ install(TARGETS ${PROJECT_NAME}
 # #######################################################################################################################
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(BUILD_NAME "Debug")
-elseif(CMAKE_BUILD_TYPE STREQUAL "Logging")
+elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
         set(BUILD_NAME "Logging")
 else()
         set(BUILD_NAME "Release")
@@ -152,7 +163,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/Plugin${BUILD_NAME}/")
 
-if(${CMAKE_BUILD_TYPE} STREQUAL Debug OR ${CMAKE_BUILD_TYPE} STREQUAL Logging OR ${CMAKE_BUILD_TYPE} STREQUAL Release)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "Release")
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${CMAKE_CURRENT_SOURCE_DIR}/contrib/Distribution/Plugin${BUILD_NAME}/")
 endif()
@@ -174,7 +185,7 @@ foreach(DEPLOY_TARGET $ENV{SkyrimPluginTargets})
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/")
 
-        if(${CMAKE_BUILD_TYPE} STREQUAL Debug OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo OR ${CMAKE_BUILD_TYPE} STREQUAL Release)
+        if(${CMAKE_BUILD_TYPE} STREQUAL "Debug" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo" OR ${CMAKE_BUILD_TYPE} STREQUAL "Release")
                 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/")
         endif()
@@ -197,7 +208,7 @@ if(CONFIG_FILES)
                 COMMAND ${CMAKE_COMMAND} -E copy ${CONFIG_FILES} "${ZIP_DIR}/SKSE/Plugins/")
 endif()
 
-if(${CMAKE_BUILD_TYPE} STREQUAL Debug OR ${CMAKE_BUILD_TYPE} STREQUAL Logging OR ${CMAKE_BUILD_TYPE} STREQUAL Release)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "Release")
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${ZIP_DIR}/SKSE/Plugins/")
 endif()

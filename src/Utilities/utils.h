@@ -19,9 +19,6 @@ http://www.fsf.org/licensing/licenses
 *************************************************************************/
 #pragma once
 
-#if 0
-#include <shlobj.h>
-#endif
 
 constexpr RE::FormID ClothKeyword = 0x06BBE8;
 constexpr RE::FormID CurrentFollowerFaction = 0x0005C84E;

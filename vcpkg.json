@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "pauseafterloadunscripted",
-  "version-string": "1.1.0.0",
+  "version-string": "1.1.1.0",
   "port-version": 0,
   "description": "SKSE plugin to pause, preventing annoying ambushes, after load screen transition.",
   "homepage": "https://github.com/SteveTownsend/PauseAfterLoadUnscripted",
@@ -19,5 +19,15 @@
   "default-features": [
     "plugin"
   ],
-  "builtin-baseline": "94ce0dab56f4d8ba6bd631ba59ed682b02d45c46"
+  "overrides": [
+    {
+        "name": "fmt",
+        "version": "10.1.1"
+    },
+    {
+      "name": "spdlog",
+      "version": "1.12.0"
+    }
+  ],
+  "builtin-baseline": "6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2"
 }

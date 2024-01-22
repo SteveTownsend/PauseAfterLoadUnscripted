@@ -21,10 +21,7 @@ http://www.fsf.org/licensing/licenses
 #include "PrecompiledHeaders.h"
 #endif
 
-//#include <wtypes.h>
-
-//#include "SKSE/Impl/PCH.h"
-//#include "SKSE/Impl/WinAPI.h"
+#include <windows.h>
 
 #include "Utilities/LogWrapper.h"
 #include "Utilities/version.h"

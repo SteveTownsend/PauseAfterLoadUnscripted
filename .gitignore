@@ -1,3 +1,4 @@
+bld
 x64
 .vs
 /*.user
@@ -6,3 +7,6 @@ x64
 build
 contrib
 out
+bld/INSTALL.vcxproj
+PauseAfterLoadUnscripted.dir
+vcpkg_installed

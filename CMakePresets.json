@@ -2,10 +2,17 @@
   "version": 2,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 24,
+    "minor": 27,
     "patch": 0
   },
   "configurePresets": [
+    {
+      "name": "ninja-multi",
+      "inherits": "default",
+      "displayName": "Ninja Multi-Config",
+      "description": "Default build using Ninja Multi-Config generator",
+      "generator": "Ninja Multi-Config"
+    },
     {
       "name": "vcpkg",
       "hidden": true,
