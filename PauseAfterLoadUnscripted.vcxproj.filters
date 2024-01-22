@@ -89,6 +89,12 @@
     <Filter Include="src\Pausing">
       <UniqueIdentifier>{bf4c8422-b1fb-4310-92e7-ab0b52297c6c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cmake">
+      <UniqueIdentifier>{4b8c63bd-bbaa-4450-a51a-3deac95c074b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{07a9b852-2d83-45d0-aaa3-a2dfd8d8103f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Batch\build-artifacts-rar.bat">
@@ -100,8 +106,26 @@
     <None Include="Config\PauseAfterLoadUnscripted.ini">
       <Filter>Config</Filter>
     </None>
+    <None Include="vcpkg.json" />
+    <None Include="vcpkg-configuration.json" />
+    <None Include="cmake\archive_artifacts.cmake">
+      <Filter>cmake</Filter>
+    </None>
+    <None Include="cmake\PluginInfo.h.in">
+      <Filter>cmake</Filter>
+    </None>
+    <None Include="cmake\version.rc.in">
+      <Filter>cmake</Filter>
+    </None>
+    <None Include="CMakePresets.json" />
+    <None Include="scripts\archive_artifacts.py">
+      <Filter>scripts</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PauseAfterLoadUnscripted.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
 </Project>

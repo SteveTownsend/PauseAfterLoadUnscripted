@@ -20,10 +20,12 @@ http://www.fsf.org/licensing/licenses
 #pragma once
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 
-#include "CommonLibSSE/include/RE/Skyrim.h"
-#include "CommonLibSSE/include/SKSE/SKSE.h"
+#include "RE/Skyrim.h"
+#include "SKSE/SKSE.h"
 
-#include <string>
+#include <string_view>
+using namespace std::literals;
+
 #include <vector>
 #include <memory>
 #include <unordered_map>

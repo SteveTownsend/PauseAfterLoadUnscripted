@@ -3,3 +3,6 @@ x64
 /*.user
 /*.aps
 *.user
+build
+contrib
+out

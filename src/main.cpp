@@ -135,10 +135,10 @@ void InitializeDiagnostics()
 	std::filesystem::path logPath(SKSE::log::log_directory().value());
 	try
 	{
-		std::wstring fileName(logPath.generic_wstring());
-		fileName.append(L"/");
-		fileName.append(L_PALU_NAME);
-		fileName.append(L".log");
+		std::string fileName(logPath.generic_string());
+		fileName.append("/");
+		fileName.append(PALU_NAME);
+		fileName.append(".log");
 		PALULogger = spdlog::basic_logger_mt(LoggerName, fileName, true);
 		PALULogger->set_pattern("%Y-%m-%d %T.%e %8l %6t %v");
 	}
@@ -156,6 +156,7 @@ void InitializeDiagnostics()
 	REL_MESSAGE("{} v{}", PALU_NAME, VersionInfo::Instance().GetPluginVersionString().c_str());
 }
 
+#if 0
 extern "C"
 {
 
@@ -211,7 +212,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
 		SKSE::PluginVersionData v;
 
 		// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
-		v.PluginVersion({ 1, 0, 0, 9 });
+		v.PluginVersion({ 1, 1, 0, 0 });
 		v.PluginName(PALU_NAME);
 		v.AuthorName(MOD_AUTHOR);
 		v.AuthorEmail(MOD_SUPPORT);
@@ -229,5 +230,38 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
 		return v;
 	}
 }();
-#endif
 }
+#endif
+#else
+#if 0
+EXTERN_C [[maybe_unused]] __declspec(dllexport) constinit auto SKSEPlugin_Version = []() noexcept {
+	SKSE::PluginVersionData v;
+	v.PluginName(PALU_NAME);
+	v.AuthorName(MOD_AUTHOR);
+	v.AuthorEmail(MOD_SUPPORT);
+	// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
+	v.PluginVersion({ 1, 1, 0, 0 });
+	v.UsesAddressLibrary(true);
+	return v;
+}();
+
+EXTERN_C [[maybe_unused]] __declspec(dllexport) bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo* pluginInfo) {
+	pluginInfo->name = SKSEPlugin_Version.pluginName;
+	pluginInfo->infoVersion = SKSE::PluginInfo::kVersion;
+	pluginInfo->version = SKSEPlugin_Version.pluginVersion;
+	return true;
+}
+#endif
+EXTERN_C __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* skse)
+{
+	InitializeDiagnostics();
+
+	palu::SettingsCache::Instance().Refresh();
+
+	REL_MESSAGE("{} plugin loaded", PALU_NAME);
+	SKSE::Init(skse);
+	SKSE::GetMessagingInterface()->RegisterListener(SKSEMessageHandler);
+
+	return true;
+}
+#endif
