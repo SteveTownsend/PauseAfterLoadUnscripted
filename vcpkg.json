@@ -1,33 +1,18 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "pauseafterloadunscripted",
-  "version-string": "1.1.1.0",
+  "version-string": "1.2.0.0",
   "port-version": 0,
   "description": "SKSE plugin to pause, preventing annoying ambushes, after load screen transition.",
   "homepage": "https://github.com/SteveTownsend/PauseAfterLoadUnscripted",
   "license": "MIT",
   "features": {
     "plugin": {
-      "description": "Build the SKSE plugin.",
-      "dependencies": [
-        "commonlibsse-ng",
-        "spdlog",
-        "boost-asio"
-      ]
+      "description": "Build the SKSE plugin."
     }
   },
   "default-features": [
     "plugin"
   ],
-  "overrides": [
-    {
-        "name": "fmt",
-        "version": "10.1.1"
-    },
-    {
-      "name": "spdlog",
-      "version": "1.12.0"
-    }
-  ],
-  "builtin-baseline": "6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2"
+  "builtin-baseline": "53bef8994c541b6561884a8395ea35715ece75db"
 }
