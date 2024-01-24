@@ -62,8 +62,14 @@ void SettingsCache::Refresh(void)
 	REL_VMESSAGE("ResumeAfter = {:.1f} seconds", _resumeAfter);
 	_canUnpauseAfter = ini.GetValue<double>(SectionName, "canunpauseafter", DefaultCanUnpauseAfter);
 	REL_VMESSAGE("CanUnpauseAfter = {:.1f} seconds", _canUnpauseAfter);
+	_pauseDelay = ini.GetValue<double>(SectionName, "pausedelay", DefaultPauseDelay);
+	REL_VMESSAGE("PauseDelay = {:.1f} seconds", _pauseDelay);
 	_pauseOnSave = ini.GetValue<bool>(SectionName, "pauseonsave", DefaultPauseOnSave);
 	REL_VMESSAGE("PauseOnSave = {}", _pauseOnSave);
+	_pauseOnLoad = ini.GetValue<bool>(SectionName, "pauseonload", DefaultPauseOnLoad);
+	REL_VMESSAGE("PauseOnLoad = {}", _pauseOnSave);
+	_pauseOnLoadScreen = ini.GetValue<bool>(SectionName, "pauseonloadscreen", DefaultPauseOnLoadScreen);
+	REL_VMESSAGE("PauseOnLoadScreen = {}", _pauseOnSave);
 	_ignoreKeyPressAndButton = ini.GetValue<bool>(SectionName, "ignorekeypressandbutton", DefaultIgnoreKeyPressAndButton);
 	REL_VMESSAGE("IgnoreKeyPressAndButton = {}", _ignoreKeyPressAndButton);
 	_ignoreMouseMove = ini.GetValue<bool>(SectionName, "ignoremousemove", DefaultIgnoreMouseMove);

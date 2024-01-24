@@ -37,6 +37,8 @@ set(sources
         src/Data/SimpleIni.h
         src/Pausing/InputListener.h
         src/Pausing/PauseHandler.h
+        src/Relocation/Hooks.cpp
+        src/Relocation/Hooks.h
         src/Utilities/LogStackWalker.cpp
         src/Utilities/LogStackWalker.h
         src/Utilities/LogWrapper.h
