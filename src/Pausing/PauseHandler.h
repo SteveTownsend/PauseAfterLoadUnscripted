@@ -125,16 +125,6 @@ public:
 			{
 				REL_MESSAGE("OK to freeze time");
 				result = true;
-
-				// delay pause for CELL setup, if configured and required
-				double pauseDelay(isSaving ? 0.0 : SettingsCache::Instance().PauseDelay());
-				if (pauseDelay > 0.0)
-				{
-					REL_MESSAGE("Delay for {.2f} seconds", pauseDelay);
-					std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(pauseDelay * 1000.0));
-				}
-				// pause game using CLSSE 'easy button'
-				RE::Main::GetSingleton()->freezeTime = true;
 			}
 			else
 			{
@@ -377,6 +367,16 @@ private:
 	void IOService()
 	{
 		REL_DMESSAGE("Starting timer thread");
+		// delay pause for CELL setup, if configured
+		double pauseDelay(SettingsCache::Instance().PauseDelay());
+		if (pauseDelay > 0.0)
+		{
+			REL_MESSAGE("Delay for {:.1f} seconds", pauseDelay);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(pauseDelay * 1000.0));
+		}
+		// pause game using CLSSE 'easy button'
+		RE::Main::GetSingleton()->freezeTime = true;
+
 		_io_service.run_one();
 		_io_service.restart();
 		REL_DMESSAGE("Exiting timer thread");
