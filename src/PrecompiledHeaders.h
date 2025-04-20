@@ -21,6 +21,7 @@ http://www.fsf.org/licensing/licenses
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 
 #include "RE/Skyrim.h"
+#include <REL/Relocation.h>
 #include "SKSE/SKSE.h"
 
 #include <string_view>
@@ -34,3 +35,4 @@ using namespace std::literals;
 
 #include "Utilities/RecursiveLock.h"
 #include "Utilities/LogWrapper.h"
+#include "Relocation/Hooks.h"

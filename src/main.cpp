@@ -52,7 +52,7 @@ void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 		if (palu::SettingsCache::Instance().PauseOnSave())
 		{
 			REL_MESSAGE("Request Pause on kSaveGame message");
-			if (pauseHandler.value().StartPause())
+			if (pauseHandler.value().StartPause(true))
 			{
 				// no delay before progressing
 				pauseHandler.value().ProgressPause();
@@ -62,23 +62,24 @@ void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
 
 	// to confirm timings wrt Loading Menu handling
 	case SKSE::MessagingInterface::kPostLoad:
-		REL_MESSAGE("kPostLoad message");
+		DBG_MESSAGE("kPostLoad message");
 		break;
 
 	case SKSE::MessagingInterface::kPostPostLoad:
-		REL_MESSAGE("kPostPostLoad message");
+		DBG_MESSAGE("kPostPostLoad message");
 		break;
 
 	case SKSE::MessagingInterface::kPreLoadGame:
-		REL_MESSAGE("kPreLoadGame message");
+		DBG_MESSAGE("kPreLoadGame message");
+		pauseHandler.value().SetIsLoading();
 		break;
 
 	case SKSE::MessagingInterface::kPostLoadGame:
-		REL_MESSAGE("kPostLoadGame message");
+		DBG_MESSAGE("kPostLoadGame message");
 		break;
 
 	case SKSE::MessagingInterface::kNewGame:
-		REL_MESSAGE("kNewGame message");
+		DBG_MESSAGE("kNewGame message");
 		break;
 
 	default:
@@ -156,105 +157,10 @@ void InitializeDiagnostics()
 	REL_MESSAGE("{} v{}", PALU_NAME, VersionInfo::Instance().GetPluginVersionString().c_str());
 }
 
-#if 0
-extern "C"
-{
-
-#ifndef SKYRIM_AE
-bool DLLEXPORT SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
-{
-	InitializeDiagnostics();
-
-	if (a_skse->IsEditor()) {
-		REL_FATALERROR("Loaded in editor, marking as incompatible");
-		return false;
-	}
-
-	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = PALU_NAME;
-	a_info->version = VersionInfo::Instance().GetVersionMajor();
-
-	REL::Version runtimeVer(a_skse->RuntimeVersion());
-	if (runtimeVer < SKSE::RUNTIME_1_5_73 || runtimeVer > SKSE::RUNTIME_1_5_97)
-	{
-		REL_FATALERROR("Unsupported runtime version {}", runtimeVer.string());
-		return false;
-	}
-	return true;
-}
-#endif
-
-bool DLLEXPORT SKSEPlugin_Load(const SKSE::LoadInterface * skse)
-{
-#ifdef SKYRIM_AE
-	InitializeDiagnostics();
-
-	REL::Version runtimeVer(skse->RuntimeVersion());
-	if (runtimeVer < SKSE::RUNTIME_1_6_317)
-	{
-		REL_FATALERROR("Unsupported runtime version {}", runtimeVer.string());
-		return false;
-	}
-#endif
-
-	palu::SettingsCache::Instance().Refresh();
-
-	REL_MESSAGE("{} plugin loaded", PALU_NAME);
-	SKSE::Init(skse);
-	SKSE::GetMessagingInterface()->RegisterListener(SKSEMessageHandler);
-
-	return true;
-}
-
-#ifdef SKYRIM_AE
-// constinit essential because SKSE uses LoadLibraryEX(LOAD_LIBRARY_AS_IMAGE_RESOURCE) - only compile time values work
-extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() { {
-		SKSE::PluginVersionData v;
-
-		// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
-		v.PluginVersion({ 1, 1, 0, 0 });
-		v.PluginName(PALU_NAME);
-		v.AuthorName(MOD_AUTHOR);
-		v.AuthorEmail(MOD_SUPPORT);
-
-		v.UsesAddressLibrary(true);
-		v.CompatibleVersions({ 
-			SKSE::RUNTIME_1_5_97,
-			SKSE::RUNTIME_1_6_317,
-			SKSE::RUNTIME_1_6_318,
-			SKSE::RUNTIME_1_6_323,
-			SKSE::RUNTIME_1_6_342,
-			SKSE::RUNTIME_1_6_343,
-			SKSE::RUNTIME_LATEST });
-
-		return v;
-	}
-}();
-}
-#endif
-#else
-#if 0
-EXTERN_C [[maybe_unused]] __declspec(dllexport) constinit auto SKSEPlugin_Version = []() noexcept {
-	SKSE::PluginVersionData v;
-	v.PluginName(PALU_NAME);
-	v.AuthorName(MOD_AUTHOR);
-	v.AuthorEmail(MOD_SUPPORT);
-	// WET WET WET but less work than injecting Version in the build a la Quick Loot RE
-	v.PluginVersion({ 1, 1, 0, 0 });
-	v.UsesAddressLibrary(true);
-	return v;
-}();
-
-EXTERN_C [[maybe_unused]] __declspec(dllexport) bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo* pluginInfo) {
-	pluginInfo->name = SKSEPlugin_Version.pluginName;
-	pluginInfo->infoVersion = SKSE::PluginInfo::kVersion;
-	pluginInfo->version = SKSEPlugin_Version.pluginVersion;
-	return true;
-}
-#endif
 EXTERN_C __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* skse)
 {
 	InitializeDiagnostics();
+	Hooks::Install();
 
 	palu::SettingsCache::Instance().Refresh();
 
@@ -264,4 +170,3 @@ EXTERN_C __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInte
 
 	return true;
 }
-#endif

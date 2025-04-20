@@ -54,6 +54,7 @@ typedef unsigned __int64 SIZE_T, * PSIZE_T;
 typedef unsigned long SIZE_T, * PSIZE_T;
 #endif
 #endif // _MSC_VER < 1300
+#include <windows.h>
 
 class StackWalkerInternal; // forward
 class StackWalker

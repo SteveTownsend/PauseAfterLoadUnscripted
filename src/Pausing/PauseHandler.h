@@ -23,6 +23,8 @@ http://www.fsf.org/licensing/licenses
 // Pause logic per wsPauseQuestAliasScript.psc, courtesy of wskeever and bobbyclue
 #include <format>
 #include <boost/asio.hpp>
+#include <chrono>
+#include <thread>
 
 #include "Pausing/InputListener.h"
 #include "Data/SettingsCache.h"
@@ -51,13 +53,69 @@ public:
 		_listener.reset();
 	}
 
+	// set when game loading message is detected, to distinguish fast-travel and door transition from game load
+	void SetIsLoading()
+	{
+		_isLoading = true;
+	}
+
 	PauseHandler& operator=(const PauseHandler&) = default;
 	PauseHandler& operator=(PauseHandler&&) = default;
 
-	bool StartPause()
+	bool StartPause(const bool isSaving = false)
 	{
 		bool result(false);
+		// Skip pause if config demands it - cases are saving/loading/load-screen
+		if (!isSaving)
+		{
+			if (_isLoading)
+			{
+				DBG_MESSAGE("Called on game load");
+				_isLoading = false;
+				if (!SettingsCache::Instance().PauseOnLoad())
+				{
+					return false;
+				}
+			}
+			else
+			{
+				DBG_MESSAGE("Called on load-screen, not game load");
+				if (!SettingsCache::Instance().PauseOnLoadScreen())
+				{
+					return false;
+				}
+			}
+		}
+		else
+		{
+			DBG_MESSAGE("Called on game save");
+		}
 
+		// Check MenuTopicManager is not active before we halt
+		if (!TryEnterCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&RE::MenuTopicManager::GetSingleton()->criticalSection)))
+		{
+			REL_WARNING("Cannot freeze time while MenuTopicManager is locked");
+			return false;
+		}
+		// Check for known crashes
+		if (RE::MenuTopicManager::GetSingleton()->lastSelectedDialogue && RE::MenuTopicManager::GetSingleton()->lastSelectedDialogue->parentQuest)
+		{
+			const auto quest(RE::MenuTopicManager::GetSingleton()->lastSelectedDialogue->parentQuest);
+			std::string questName;
+			if (quest->GetFullNameLength())
+			{
+				questName = std::string(quest->GetFullName(), quest->GetFullNameLength());
+			}
+			else
+			{
+				const char* edid(quest->GetFormEditorID());
+				questName = edid ? std::string(edid) : std::string();
+			}
+			REL_WARNING("Cannot freeze time while MenuTopicManager indicates QUST dialogue {}/0x{:08x}", 
+				questName, quest->GetFormID());
+			LeaveCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&RE::MenuTopicManager::GetSingleton()->criticalSection));
+			return false;
+		}
 		// If player is in Slow Time then do not pause
 		if (!IsSlowTimeEffectActive())
 		{
@@ -67,15 +125,13 @@ public:
 			{
 				REL_MESSAGE("OK to freeze time");
 				result = true;
-
-				// pause game using CLSSE 'easy button'
-				RE::Main::GetSingleton()->freezeTime = true;
 			}
 			else
 			{
 				REL_WARNING("Already paused, ignore new request");
 			}
 		}
+		LeaveCriticalSection(reinterpret_cast<LPCRITICAL_SECTION>(&RE::MenuTopicManager::GetSingleton()->criticalSection));
 		return result;
 	}
 
@@ -311,6 +367,16 @@ private:
 	void IOService()
 	{
 		REL_DMESSAGE("Starting timer thread");
+		// delay pause for CELL setup, if configured
+		double pauseDelay(SettingsCache::Instance().PauseDelay());
+		if (pauseDelay > 0.0)
+		{
+			REL_MESSAGE("Delay for {:.1f} seconds", pauseDelay);
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(pauseDelay * 1000.0));
+		}
+		// pause game using CLSSE 'easy button'
+		RE::Main::GetSingleton()->freezeTime = true;
+
 		_io_service.run_one();
 		_io_service.restart();
 		REL_DMESSAGE("Exiting timer thread");
@@ -319,6 +385,7 @@ private:
 	std::unique_ptr<InputListener> _listener;
 	// indicates not first pass after launch - menu-closed must be preceded by menu-opened
 	bool _canPause{ false };
+	bool _isLoading{ false };
 	// acts as a guard for event sink management
 	std::atomic<bool> _paused{ false };
 	std::atomic<bool> _delayed{ false };

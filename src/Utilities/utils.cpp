@@ -19,18 +19,15 @@ http://www.fsf.org/licensing/licenses
 *************************************************************************/
 #include "PrecompiledHeaders.h"
 
-//#include "SKSE/Impl/PCH.h"
-//#include "SKSE/Impl/WinAPI.h"
-
 #include "Utilities/utils.h"
 
-//#include <shlobj.h>
 #include <psapi.h>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
 #include <algorithm> //Trim
+#include <windows.h>
 #include <math.h>	// pow
 #include <locale>
 
