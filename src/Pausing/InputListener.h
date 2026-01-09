@@ -19,103 +19,100 @@ http://www.fsf.org/licensing/licenses
 >>> END OF LICENSE >>>
 *************************************************************************/
 
-namespace palu
-{
+namespace palu {
 
 // stripped down from Quick Loot RE InputListeners.h
-class InputHandler
-{
+class InputHandler {
 public:
-	InputHandler() = default;
-	void operator()(RE::InputEvent* const& a_event, std::function<void(void)> resultHandler)
-	{
-		if (a_event)
-		{
-			auto eventType(a_event->GetEventType());
-			if ((eventType == RE::INPUT_EVENT_TYPE::kButton && SettingsCache::Instance().IgnoreKeyPressAndButton()) ||
-				(eventType == RE::INPUT_EVENT_TYPE::kMouseMove && SettingsCache::Instance().IgnoreMouseMove()) ||
-				(eventType == RE::INPUT_EVENT_TYPE::kThumbstick && SettingsCache::Instance().IgnoreThumbstick()))
-			{
-				return;
-			}
-			REL_MESSAGE("Pause terminated by Input Event type {} from Device {}",
-				a_event->eventType.underlying(), a_event->device.underlying());
-			resultHandler();
-		}
-	}
+  InputHandler() = default;
+  void operator()(RE::InputEvent *const &a_event,
+                  std::function<void(void)> resultHandler) {
+    if (a_event) {
+      auto eventType(a_event->GetEventType());
+      if ((eventType == RE::INPUT_EVENT_TYPE::kButton &&
+           SettingsCache::Instance().IgnoreButton()) ||
+          (eventType == RE::INPUT_EVENT_TYPE::kChar &&
+           SettingsCache::Instance().IgnoreKeyPress()) ||
+          (eventType == RE::INPUT_EVENT_TYPE::kMouseMove &&
+           SettingsCache::Instance().IgnoreMouseMove()) ||
+          (eventType == RE::INPUT_EVENT_TYPE::kThumbstick &&
+           SettingsCache::Instance().IgnoreThumbstick())) {
+        return;
+      }
+      REL_MESSAGE("Pause terminated by Input Event type {} from Device {}",
+                  a_event->eventType.underlying(),
+                  a_event->device.underlying());
+      resultHandler();
+    }
+  }
 };
 
-class InputListener :
-	public RE::BSTEventSink<RE::InputEvent*>
-{
+class InputListener : public RE::BSTEventSink<RE::InputEvent *> {
 public:
-	InputListener() = delete;
-	InputListener(std::function<void(void)> resultHandler)
-	{
-		_resultHandler = resultHandler;
-		_callback = std::make_unique<InputHandler>();
-	}
+  InputListener() = delete;
+  InputListener(std::function<void(void)> resultHandler) {
+    _resultHandler = resultHandler;
+    _callback = std::make_unique<InputHandler>();
+  }
 
-	InputListener(const InputListener&) = default;
-	InputListener(InputListener&&) = default;
+  InputListener(const InputListener &) = default;
+  InputListener(InputListener &&) = default;
 
-	~InputListener() { Disable(); }
+  ~InputListener() { Disable(); }
 
-	InputListener& operator=(const InputListener&) = default;
-	InputListener& operator=(InputListener&&) = default;
+  InputListener &operator=(const InputListener &) = default;
+  InputListener &operator=(InputListener &&) = default;
 
-	void Enable()
-	{
-		auto input = RE::BSInputDeviceManager::GetSingleton();
-		if (input) {
-			input->AddEventSink(this);
-		}
-	}
+  void Enable() {
+    auto input = RE::BSInputDeviceManager::GetSingleton();
+    if (input) {
+      input->AddEventSink(this);
+    }
+  }
 
-	void SetDelay(const double ignoreInput)
-	{
-		_delayUnpause = ignoreInput > 0.0;
-		if (_delayUnpause)
-		{
-			_delayExpiry = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<long long>(ignoreInput * 1000.0));
-		}
-	}
+  void SetDelay(const double ignoreInput) {
+    _delayUnpause = ignoreInput > 0.0;
+    if (_delayUnpause) {
+      _delayExpiry = std::chrono::high_resolution_clock::now() +
+                     std::chrono::milliseconds(
+                         static_cast<long long>(ignoreInput * 1000.0));
+    }
+  }
 
-	void Disable()
-	{
-		auto input = RE::BSInputDeviceManager::GetSingleton();
-		if (input) {
-			input->RemoveEventSink(this);
-		}
-	}
+  void Disable() {
+    auto input = RE::BSInputDeviceManager::GetSingleton();
+    if (input) {
+      input->RemoveEventSink(this);
+    }
+  }
 
 private:
-	RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>*) override
-	{
-		if (a_event && *a_event) {
-			if (_delayUnpause)
-			{
-				const std::chrono::milliseconds timeAfterExpiry(
-					std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - _delayExpiry));
-				if (timeAfterExpiry.count() > 0)
-				{
-					_delayUnpause = false;
-					REL_MESSAGE("CanUnpauseAfter timer expired {} milliseconds ago", timeAfterExpiry.count());
-				}
-			}
-			if (!_delayUnpause)
-			{
-				(*_callback)(*a_event, _resultHandler);
-			}
-		}
+  RE::BSEventNotifyControl
+  ProcessEvent(RE::InputEvent *const *a_event,
+               RE::BSTEventSource<RE::InputEvent *> *) override {
+    if (a_event && *a_event) {
+      if (_delayUnpause) {
+        const std::chrono::milliseconds timeAfterExpiry(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - _delayExpiry));
+        if (timeAfterExpiry.count() > 0) {
+          _delayUnpause = false;
+          REL_MESSAGE("CanUnpauseAfter timer expired {} milliseconds ago",
+                      timeAfterExpiry.count());
+        }
+      }
+      if (!_delayUnpause) {
+        (*_callback)(*a_event, _resultHandler);
+      }
+    }
 
-		return RE::BSEventNotifyControl::kContinue;
-	}
+    return RE::BSEventNotifyControl::kContinue;
+  }
 
-	std::unique_ptr<InputHandler> _callback;
-	std::function<void(void)> _resultHandler;
-	std::chrono::time_point<std::chrono::high_resolution_clock> _delayExpiry;
-	bool _delayUnpause{ false };
+  std::unique_ptr<InputHandler> _callback;
+  std::function<void(void)> _resultHandler;
+  std::chrono::time_point<std::chrono::high_resolution_clock> _delayExpiry;
+  bool _delayUnpause{false};
 };
 
-}
+} // namespace palu

@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.28.1)
 
 # #######################################################################################################################
 # # Define project
 # #######################################################################################################################
 set(NAME "PauseAfterLoadUnscripted")
 set(PRETTY_NAME "Pause After Load Unscripted SE")
-set(VERSION 1.2.0)
+set(VERSION 2.0.0)
 
 message("${CMAKE_SIZEOF_VOID_P}")
 set(spdlog_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
@@ -29,6 +29,10 @@ configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
         @ONLY)
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Ver.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/include/Ver.h
+        @ONLY)
 
 set(sources
         src/Data/SettingsCache.cpp
@@ -39,19 +43,15 @@ set(sources
         src/Pausing/PauseHandler.h
         src/Relocation/Hooks.cpp
         src/Relocation/Hooks.h
-        src/Utilities/LogStackWalker.cpp
-        src/Utilities/LogStackWalker.h
         src/Utilities/LogWrapper.h
         src/Utilities/RecursiveLock.cpp
         src/Utilities/RecursiveLock.h
-        src/Utilities/StackWalker.cpp
-        src/Utilities/StackWalker.h
         src/Utilities/utils.cpp
         src/Utilities/utils.h
-        src/Utilities/version.cpp
         src/Utilities/version.h
         src/main.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+        ${CMAKE_CURRENT_BINARY_DIR}/include/Ver.h
 )
 
 source_group(
@@ -85,6 +85,7 @@ if(WIN32)
         if(${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
                 add_compile_definitions(
                         _FULL_LOGGING
+                        NDEBUG
                 )
         endif()
 endif()
@@ -127,7 +128,8 @@ target_include_directories(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 

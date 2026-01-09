@@ -1,3 +1,4 @@
+// clang-format off
 /*** LICENCE ***************************************************************************************/
 /*
   SimpleIni - Simple class for configuration file like .ini
@@ -329,3 +330,4 @@ class SimpleIni::KeyIterator
 };
 
 #endif // SIMPLEINI_H
+// clang-format on

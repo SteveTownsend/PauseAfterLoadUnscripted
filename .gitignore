@@ -10,3 +10,7 @@ out
 bld/INSTALL.vcxproj
 PauseAfterLoadUnscripted.dir
 vcpkg_installed
+debug-msvc
+logging-msvc
+release-msvc
+.vscode/settings.json
