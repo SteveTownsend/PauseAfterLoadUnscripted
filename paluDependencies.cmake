@@ -36,8 +36,8 @@ set(BUILD_TESTS OFF)
 FetchContent_Declare(
   CommonLibSSE
   GIT_REPOSITORY https://github.com/alandtse/CommonLibVR
-  # May 27 2024 -> Dec 12 2025
-  GIT_TAG        e0e0c867b1b06b755755c0e0e64f9b7e00dc009e
+  # Dec 12 2025 -> Jan 22 2026
+  GIT_TAG        5d341d47108de8f1e70de7db9fa8244d34544fd6
   OVERRIDE_FIND_PACKAGE
 )
 FetchContent_MakeAvailable(CommonLibSSE)

@@ -62,19 +62,19 @@ public:
     // Skip pause if config demands it - cases are saving/loading/load-screen
     if (!isSaving) {
       if (_isLoading) {
-        DBG_MESSAGE("Called on game load");
+        REL_MESSAGE("Called on game load");
         _isLoading = false;
         if (!SettingsCache::Instance().PauseOnLoad()) {
           return false;
         }
       } else {
-        DBG_MESSAGE("Called on load-screen, not game load");
+        REL_MESSAGE("Called on load-screen, not game load");
         if (!SettingsCache::Instance().PauseOnLoadScreen()) {
           return false;
         }
       }
     } else {
-      DBG_MESSAGE("Called on game save");
+      REL_MESSAGE("Called on game save");
     }
 
     // Check MenuTopicManager is not active before we halt
@@ -139,35 +139,39 @@ public:
         controls->IsMovementControlsEnabled() &&
         controls->IsSneakingControlsEnabled()) {
       // prepare Input Listener to block, if configured
+      // Also accommodate any CELL setup config
+      double pauseDelay(SettingsCache::Instance().PauseDelay());
       const double ignoreInput(SettingsCache::Instance().CanUnpauseAfter());
-      _listener->SetDelay(ignoreInput);
+      _listener->SetDelay(pauseDelay + ignoreInput);
 
       // Activate InputHandler here - blocks input until any configured delay
       // expires
       _listener->Enable();
 
       // Optionally, resume after configured delay
-      double delay(SettingsCache::Instance().ResumeAfter());
+      double autoResumeAfter(SettingsCache::Instance().ResumeAfter());
       bool expected2(false);
       bool desired2(true);
-      if (delay > 0.0 &&
-          _delayed.compare_exchange_strong(expected2, desired2)) {
-        REL_DMESSAGE("Resume game if no input for {:.1f} seconds, ignoring "
-                     "input for {:.1f} seconds",
-                     delay, ignoreInput);
-        _timer.expires_from_now(boost::posix_time::millisec(
-            static_cast<int>((delay + ignoreInput) * 1000.0)));
-        _timer.async_wait([this](const boost::system::error_code &ec) {
-          if (!ec) {
-            REL_DMESSAGE("Pause timed out");
-            Unpause();
+      if (pauseDelay + ignoreInput + autoResumeAfter > 0.0) {
+        REL_DMESSAGE(
+            "Setup delay of {:.1f} seconds, then resume game if no input for "
+            "{:.1f} seconds, ignore input for {:.1f} seconds",
+            pauseDelay, autoResumeAfter, ignoreInput);
+        if (_delayed.compare_exchange_strong(expected2, desired2)) {
+          _timer.expires_from_now(boost::posix_time::millisec(
+              static_cast<int>((ignoreInput + autoResumeAfter) * 1000.0)));
+          _timer.async_wait([this](const boost::system::error_code &ec) {
+            if (!ec) {
+              REL_DMESSAGE("Pause timed out");
+              Unpause();
+            }
+          });
+          // Start IO Service to handle timer
+          if (_thread.has_value()) {
+            _thread.reset();
           }
-        });
-        // Start IO Service to handle timer
-        if (_thread.has_value()) {
-          _thread.reset();
+          _thread.emplace(std::bind(&PauseHandler::IOService, this));
         }
-        _thread.emplace(std::bind(&PauseHandler::IOService, this));
       }
     } else {
       REL_WARNING("Controls-Enabled State not all true: fighting {} looking {} "
@@ -325,13 +329,29 @@ private:
       _timer.cancel();
     }
 
+    // At this point _paused may be true but _ui_stopped false if we bailed
+    // for some reason before freezing the UI
+    // See https://github.com/SteveTownsend/PauseAfterLoadUnscripted/issues/29
+    /*
+18:51:27.506 20720 W OK to freeze time
+18:51:27.506 20720 W Loading Menu opened - pause OK true
+18:51:57.386 20720 W Loading Menu closed after preceding Opened event - pause OK
+18:51:57.386 20720 I Controls-Enabled State not all true: fighting false looking
+true journal false menu true movement false sneaking true 18:51:57.386 20720 D
+Restart game
+    */
+    // This left the UI pause count decremented without a prior increment,
+    // freezing the game
     bool expected2(true);
     bool desired2(false);
     if (_paused.compare_exchange_strong(expected2, desired2)) {
-      REL_DMESSAGE("Restart game");
+      REL_DMESSAGE("Disable input handler");
       _listener->Disable();
-      // Resume game
-      RE::UI::GetSingleton()->numPausesGame--;
+      if (_ui_stopped.compare_exchange_strong(expected2, desired2)) {
+        // Resume game
+        REL_DMESSAGE("Restart game");
+        RE::UI::GetSingleton()->numPausesGame--;
+      }
     } else {
       REL_WARNING("Already unpaused, ignore new request");
     }
@@ -347,11 +367,16 @@ private:
           std::chrono::duration<double, std::milli>(pauseDelay * 1000.0));
     }
     // pause game using CLSSE 'easy button'
-    RE::UI::GetSingleton()->numPausesGame++;
+    bool expected3(false);
+    bool desired3(true);
+    if (_ui_stopped.compare_exchange_strong(expected3, desired3)) {
+      REL_DMESSAGE("Pause game");
+      RE::UI::GetSingleton()->numPausesGame++;
 
-    _io_context.run_one();
-    _io_context.restart();
-    REL_DMESSAGE("Exiting timer thread");
+      _io_context.run_one();
+      _io_context.restart();
+      REL_DMESSAGE("Exiting timer thread");
+    }
   }
 
   std::unique_ptr<InputListener> _listener;
@@ -362,6 +387,7 @@ private:
   // acts as a guard for event sink management
   std::atomic<bool> _paused{false};
   std::atomic<bool> _delayed{false};
+  std::atomic<bool> _ui_stopped{false};
   std::unordered_set<RE::EffectSetting *> _slowTimeEffects;
   boost::asio::io_context _io_context;
   boost::asio::deadline_timer _timer;
