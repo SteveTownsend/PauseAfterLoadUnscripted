@@ -23,76 +23,82 @@ http://www.fsf.org/licensing/licenses
 #include "Data/SettingsCache.h"
 #include "Utilities/utils.h"
 
-namespace palu
-{
+namespace palu {
 
 std::unique_ptr<SettingsCache> SettingsCache::m_instance;
 
-SettingsCache& SettingsCache::Instance()
-{
-	if (!m_instance)
-	{
-		m_instance = std::make_unique<SettingsCache>();
-	}
-	return *m_instance;
+SettingsCache &SettingsCache::Instance() {
+  if (!m_instance) {
+    m_instance = std::make_unique<SettingsCache>();
+  }
+  return *m_instance;
 }
 
-void SettingsCache::Refresh(void)
-{
-	SimpleIni ini;
-	const std::wstring inFile(GetFileName());
-	if (!ini.Load(StringUtils::FromUnicode(inFile)))
-	{
-		REL_WARNING("Settings cache load from {} failed, using defaults", StringUtils::FromUnicode(inFile));
-	}
-	else
-	{
-		REL_MESSAGE("Refresh settings cache from valid file {}", StringUtils::FromUnicode(inFile));
-		for (auto section = ini.beginSection(); section != ini.endSection(); ++section)
-		{
-			DBG_MESSAGE("Section {}", *section);
-			for (auto key = ini.beginKey(*section); key != ini.endKey(*section); ++key)
-			{
-				DBG_MESSAGE("Entry {}={}", *key, !key);
-			}
-		}
-	}
-	// SimpleIni normalizes names to lowercase
-	_resumeAfter = ini.GetValue<double>(SectionName, "resumeafter", DefaultResumeAfter);
-	REL_VMESSAGE("ResumeAfter = {:.1f} seconds", _resumeAfter);
-	_canUnpauseAfter = ini.GetValue<double>(SectionName, "canunpauseafter", DefaultCanUnpauseAfter);
-	REL_VMESSAGE("CanUnpauseAfter = {:.1f} seconds", _canUnpauseAfter);
-	_pauseDelay = ini.GetValue<double>(SectionName, "pausedelay", DefaultPauseDelay);
-	REL_VMESSAGE("PauseDelay = {:.1f} seconds", _pauseDelay);
-	_pauseOnSave = ini.GetValue<bool>(SectionName, "pauseonsave", DefaultPauseOnSave);
-	REL_VMESSAGE("PauseOnSave = {}", _pauseOnSave);
-	_pauseOnLoad = ini.GetValue<bool>(SectionName, "pauseonload", DefaultPauseOnLoad);
-	REL_VMESSAGE("PauseOnLoad = {}", _pauseOnSave);
-	_pauseOnLoadScreen = ini.GetValue<bool>(SectionName, "pauseonloadscreen", DefaultPauseOnLoadScreen);
-	REL_VMESSAGE("PauseOnLoadScreen = {}", _pauseOnSave);
-	_ignoreKeyPressAndButton = ini.GetValue<bool>(SectionName, "ignorekeypressandbutton", DefaultIgnoreKeyPressAndButton);
-	REL_VMESSAGE("IgnoreKeyPressAndButton = {}", _ignoreKeyPressAndButton);
-	_ignoreMouseMove = ini.GetValue<bool>(SectionName, "ignoremousemove", DefaultIgnoreMouseMove);
-	REL_VMESSAGE("IgnoreMouseMove = {}", _ignoreMouseMove);
-	_ignoreThumbstick = ini.GetValue<bool>(SectionName, "ignorethumbstick", DefaultIgnoreThumbstick);
-	REL_VMESSAGE("IgnoreThumbstick = {}", _ignoreThumbstick);
-	if (_ignoreKeyPressAndButton && _ignoreMouseMove && _ignoreThumbstick && _resumeAfter == 0.0)
-	{
-		// all user input disallowed - must configure auto-resume
-		REL_VMESSAGE("Override ResumeAfter - all user input disallowed");
-		_resumeAfter = DefaultResumeAfter;
-	}
+void SettingsCache::Refresh(void) {
+  SimpleIni ini;
+  const std::wstring inFile(GetFileName());
+  if (!ini.Load(StringUtils::FromUnicode(inFile))) {
+    REL_WARNING("Settings cache load from {} failed, using defaults",
+                StringUtils::FromUnicode(inFile));
+  } else {
+    REL_MESSAGE("Refresh settings cache from valid file {}",
+                StringUtils::FromUnicode(inFile));
+    for (auto section = ini.beginSection(); section != ini.endSection();
+         ++section) {
+      DBG_MESSAGE("Section {}", *section);
+      for (auto key = ini.beginKey(*section); key != ini.endKey(*section);
+           ++key) {
+        DBG_MESSAGE("Entry {}={}", *key, !key);
+      }
+    }
+  }
+  // SimpleIni normalizes names to lowercase
+  _resumeAfter =
+      ini.GetValue<double>(SectionName, "resumeafter", DefaultResumeAfter);
+  REL_VMESSAGE("ResumeAfter = {:.1f} seconds", _resumeAfter);
+  _canUnpauseAfter = ini.GetValue<double>(SectionName, "canunpauseafter",
+                                          DefaultCanUnpauseAfter);
+  REL_VMESSAGE("CanUnpauseAfter = {:.1f} seconds", _canUnpauseAfter);
+  _pauseDelay =
+      ini.GetValue<double>(SectionName, "pausedelay", DefaultPauseDelay);
+  REL_VMESSAGE("PauseDelay = {:.1f} seconds", _pauseDelay);
+  _pauseOnSave =
+      ini.GetValue<bool>(SectionName, "pauseonsave", DefaultPauseOnSave);
+  REL_VMESSAGE("PauseOnSave = {}", _pauseOnSave);
+  _pauseOnLoad =
+      ini.GetValue<bool>(SectionName, "pauseonload", DefaultPauseOnLoad);
+  REL_VMESSAGE("PauseOnLoad = {}", _pauseOnLoad);
+  _pauseOnLoadScreen = ini.GetValue<bool>(SectionName, "pauseonloadscreen",
+                                          DefaultPauseOnLoadScreen);
+  REL_VMESSAGE("PauseOnLoadScreen = {}", _pauseOnLoadScreen);
+  _ignoreButton = ini.GetValue<bool>(
+      SectionName, "ignorebutton", DefaultIgnoreButton);
+  REL_VMESSAGE("IgnoreButton = {}", _ignoreButton);
+  _ignoreKeyPress = ini.GetValue<bool>(
+      SectionName, "ignorekeypress", DefaultIgnoreKeyPress);
+  REL_VMESSAGE("IgnoreKeyPress = {}", _ignoreKeyPress);
+  _ignoreMouseMove = ini.GetValue<bool>(SectionName, "ignoremousemove",
+                                        DefaultIgnoreMouseMove);
+  REL_VMESSAGE("IgnoreMouseMove = {}", _ignoreMouseMove);
+  _ignoreThumbstick = ini.GetValue<bool>(SectionName, "ignorethumbstick",
+                                         DefaultIgnoreThumbstick);
+  REL_VMESSAGE("IgnoreThumbstick = {}", _ignoreThumbstick);
+  if (_ignoreButton && _ignoreKeyPress && _ignoreMouseMove && _ignoreThumbstick &&
+      _resumeAfter == 0.0) {
+    // all user input disallowed - must configure auto-resume
+    REL_VMESSAGE("Override ResumeAfter - all user input disallowed");
+    _resumeAfter = DefaultResumeAfter;
+  }
 }
 
-const std::wstring SettingsCache::GetFileName() const
-{
-	std::wstring iniFilePath;
-	std::wstring RuntimeDir = FileUtils::GetGamePath();
-	if (RuntimeDir.empty())
-		return L"";
+const std::wstring SettingsCache::GetFileName() const {
+  std::wstring iniFilePath;
+  std::wstring RuntimeDir = FileUtils::GetGamePath();
+  if (RuntimeDir.empty())
+    return L"";
 
-	iniFilePath = RuntimeDir + L"Data\\SKSE\\Plugins\\" + IniFileName;
-	return iniFilePath;
+  iniFilePath = RuntimeDir + L"Data\\SKSE\\Plugins\\" + IniFileName;
+  return iniFilePath;
 }
 
-}
+} // namespace palu

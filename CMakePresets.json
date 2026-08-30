@@ -21,7 +21,7 @@
             },
             "vendor": {
                 "microsoft.com/VisualStudioSettings/CMake/1.0": {
-                    "intelliSenseMode": "$env{PROJECT_PLATFORM}-$env{PROJECT_COMPILER}-$env{PROJECT_ARCHITECTURE}",
+                    "intelliSenseMode": "windows-msvc-x64",
                     "enableMicrosoftCodeAnalysis": true,
                     "enableClangTidyCodeAnalysis": true
                 }
@@ -134,13 +134,13 @@
                 "buildtype-debug",
                 "architecture-x64",
                 "platform-win32-unicode",
-                "generator-visualstudio",
+                "generator-ninja",
                 "compiler-msvc",
                 "packaging-vcpkg",
                 "common"
             ],
             "description": "Debug build for testing.",
-            "binaryDir": "${sourceDir}/build/debug-msvc"
+            "binaryDir": "${sourceDir}/debug-msvc"
         },
         {
             "name": "Release-MSVC",
@@ -148,13 +148,13 @@
                 "buildtype-release",
                 "architecture-x64",
                 "platform-win32-unicode",
-                "generator-visualstudio",
+                "generator-ninja",
                 "compiler-msvc",
                 "packaging-vcpkg",
                 "common"
             ],
             "description": "Optimized release build.",
-            "binaryDir": "${sourceDir}/build/release-msvc"
+            "binaryDir": "${sourceDir}/release-msvc"
         },
         {
             "name": "Logging-MSVC",
@@ -162,13 +162,13 @@
                 "buildtype-relwithdebinfo",
                 "architecture-x64",
                 "platform-win32-unicode",
-                "generator-visualstudio",
+                "generator-ninja",
                 "compiler-msvc",
                 "packaging-vcpkg",
                 "common"
             ],
             "description": "Optimized release build with logging.",
-            "binaryDir": "${sourceDir}/build/logging-msvc"
+            "binaryDir": "${sourceDir}/logging-msvc"
         },
         {
             "name": "Debug-Clang",

@@ -19,24 +19,7 @@ http://www.fsf.org/licensing/licenses
 *************************************************************************/
 #pragma once
 
-constexpr const char* PALU_NAME = "PauseAfterLoadUnscripted";
-constexpr const wchar_t* L_PALU_NAME = L"PauseAfterLoadUnscripted";
-constexpr const char* MOD_AUTHOR = "Steve Townsend";
-constexpr const char* MOD_SUPPORT = "SteveTownsend0@gmail.com";
-
-class VersionInfo
-{
-public:
-	static VersionInfo& Instance();
-	std::string GetPluginVersionString() const;
-	uint32_t GetVersionMajor() const;
-	REL::Version GetVersion() const;
-
-private:
-	VersionInfo() : m_majorVersion(0) {}
-	static VersionInfo* m_instance;
-	void GetPluginVersionInfo();
-	std::string m_versionString;
-	uint32_t m_majorVersion;
-	REL::Version m_version;
-};
+constexpr const char *PALU_NAME = "PauseAfterLoadUnscripted";
+constexpr const wchar_t *L_PALU_NAME = L"PauseAfterLoadUnscripted";
+constexpr const char *MOD_AUTHOR = "Steve Townsend";
+constexpr const char *MOD_SUPPORT = "SteveTownsend0@gmail.com";

@@ -22,9 +22,7 @@ http://www.fsf.org/licensing/licenses
 #include "Data/SettingsCache.h"
 #include "Pausing/PauseHandler.h"
 #include "Utilities/version.h"
-#if _DEBUG
-#include "Utilities/LogStackWalker.h"
-#endif
+#include "Ver.h"
 
 #include <ShlObj.h>
 #include <filesystem>
@@ -39,134 +37,106 @@ const std::string LogLevelVariable = "PALULogLevel";
 
 std::optional<palu::PauseHandler> pauseHandler;
 
-void SKSEMessageHandler(SKSE::MessagingInterface::Message* msg)
-{
-	switch (msg->type)
-	{
-	case SKSE::MessagingInterface::kDataLoaded:
-		pauseHandler.emplace();
-		REL_MESSAGE("kDataLoaded Message - Pause available");
-		break;
+void SKSEMessageHandler(SKSE::MessagingInterface::Message *msg) {
+  switch (msg->type) {
+  case SKSE::MessagingInterface::kDataLoaded:
+    pauseHandler.emplace();
+    REL_MESSAGE("kDataLoaded Message - Pause available");
+    break;
 
-	case SKSE::MessagingInterface::kSaveGame:
-		if (palu::SettingsCache::Instance().PauseOnSave())
-		{
-			REL_MESSAGE("Request Pause on kSaveGame message");
-			if (pauseHandler.value().StartPause(true))
-			{
-				// no delay before progressing
-				pauseHandler.value().ProgressPause();
-			}
-		}
-		break;
+  case SKSE::MessagingInterface::kSaveGame:
+    if (palu::SettingsCache::Instance().PauseOnSave()) {
+      REL_MESSAGE("Request Pause on kSaveGame message");
+      if (pauseHandler.value().StartPause(true)) {
+        // no delay before progressing
+        pauseHandler.value().ProgressPause();
+      }
+    }
+    break;
 
-	// to confirm timings wrt Loading Menu handling
-	case SKSE::MessagingInterface::kPostLoad:
-		DBG_MESSAGE("kPostLoad message");
-		break;
+  // to confirm timings wrt Loading Menu handling
+  case SKSE::MessagingInterface::kPostLoad:
+    DBG_MESSAGE("kPostLoad message");
+    break;
 
-	case SKSE::MessagingInterface::kPostPostLoad:
-		DBG_MESSAGE("kPostPostLoad message");
-		break;
+  case SKSE::MessagingInterface::kPostPostLoad:
+    DBG_MESSAGE("kPostPostLoad message");
+    break;
 
-	case SKSE::MessagingInterface::kPreLoadGame:
-		DBG_MESSAGE("kPreLoadGame message");
-		pauseHandler.value().SetIsLoading();
-		break;
+  case SKSE::MessagingInterface::kPreLoadGame:
+    DBG_MESSAGE("kPreLoadGame message");
+    pauseHandler.value().SetIsLoading();
+    break;
 
-	case SKSE::MessagingInterface::kPostLoadGame:
-		DBG_MESSAGE("kPostLoadGame message");
-		break;
+  case SKSE::MessagingInterface::kPostLoadGame:
+    DBG_MESSAGE("kPostLoadGame message");
+    break;
 
-	case SKSE::MessagingInterface::kNewGame:
-		DBG_MESSAGE("kNewGame message");
-		break;
+  case SKSE::MessagingInterface::kNewGame:
+    DBG_MESSAGE("kNewGame message");
+    break;
 
-	default:
-		break;
-	}
+  default:
+    break;
+  }
 }
 
-#if _DEBUG
-int MyCrtReportHook(int, char*, int*)
-{
-	__try {
-		RaiseException(EXCEPTION_NONCONTINUABLE_EXCEPTION, EXCEPTION_NONCONTINUABLE, 0, NULL);
-	}
-	__except (LogStackWalker::LogStack(GetExceptionInformation())) {
-		REL_FATALERROR("PALU threw structured exception");
-	}
-	return 0;
-}
-#endif
+void InitializeDiagnostics() {
+  // default log level is full (TRACE)
+  spdlog::level::level_enum logLevel(spdlog::level::trace);
+  char *levelValue;
+  size_t requiredSize;
+  if (getenv_s(&requiredSize, NULL, 0, LogLevelVariable.c_str()) == 0 &&
+      requiredSize > 0) {
+    levelValue = (char *)malloc((requiredSize + 1) * sizeof(char));
+    if (levelValue) {
+      levelValue[requiredSize] = 0; // ensure null-terminated
+      // Get the value of the LIB environment variable.
+      if (getenv_s(&requiredSize, levelValue, requiredSize,
+                   LogLevelVariable.c_str()) == 0) {
+        try {
+          int envLevel = std::stoi(levelValue);
+          if (envLevel >= SPDLOG_LEVEL_TRACE && envLevel <= SPDLOG_LEVEL_OFF) {
+            logLevel = (spdlog::level::level_enum)envLevel;
+          }
+        } catch (const std::exception &) {
+        }
+      }
+    }
+  }
 
-void InitializeDiagnostics()
-{
-#if _DEBUG
-	_CrtSetReportHook(MyCrtReportHook);
-#endif
-	// default log level is full (TRACE)
-	spdlog::level::level_enum logLevel(spdlog::level::trace);
-	char* levelValue;
-	size_t requiredSize;
-	if (getenv_s(&requiredSize, NULL, 0, LogLevelVariable.c_str()) == 0 && requiredSize > 0)
-	{
-		levelValue = (char*)malloc((requiredSize + 1) * sizeof(char));
-		if (levelValue)
-		{
-			levelValue[requiredSize] = 0;	// ensure null-terminated
-			// Get the value of the LIB environment variable.
-			if (getenv_s(&requiredSize, levelValue, requiredSize, LogLevelVariable.c_str()) == 0)
-			{
-				try
-				{
-					int envLevel = std::stoi(levelValue);
-					if (envLevel >= SPDLOG_LEVEL_TRACE && envLevel <= SPDLOG_LEVEL_OFF)
-					{
-						logLevel = (spdlog::level::level_enum)envLevel;
-					}
-				}
-				catch (const std::exception&)
-				{
-				}
-			}
-		}
-	}
-
-	std::filesystem::path logPath(SKSE::log::log_directory().value());
-	try
-	{
-		std::string fileName(logPath.generic_string());
-		fileName.append("/");
-		fileName.append(PALU_NAME);
-		fileName.append(".log");
-		PALULogger = spdlog::basic_logger_mt(LoggerName, fileName, true);
-		PALULogger->set_pattern("%Y-%m-%d %T.%e %8l %6t %v");
-	}
-	catch (const spdlog::spdlog_ex&)
-	{
-	}
-	spdlog::set_level(logLevel); // Set global log level
-	spdlog::flush_on(logLevel);	// always flush
+  std::filesystem::path logPath(SKSE::log::log_directory().value());
+  try {
+    std::string fileName(logPath.generic_string());
+    fileName.append("/");
+    fileName.append(PALU_NAME);
+    fileName.append(".log");
+    PALULogger = spdlog::basic_logger_mt(LoggerName, fileName, true);
+    PALULogger->set_pattern("%T.%e %=5t %L %v");
+  } catch (const spdlog::spdlog_ex &) {
+  }
+  spdlog::set_level(logLevel); // Set global log level
+  spdlog::flush_on(logLevel);  // always flush
 #if 0
 #if _DEBUG
 	SKSE::add_papyrus_sink();	// TODO what goes in here now
 #endif
 #endif
-
-	REL_MESSAGE("{} v{}", PALU_NAME, VersionInfo::Instance().GetPluginVersionString().c_str());
+  // Get Process and DLL version
+  REL_MESSAGE("{} v{}-{} in executable {}", Version::PROJECT, Version::NAME,
+              Version::BUILDTYPE, Version::GetExeVersionString());
 }
 
-EXTERN_C __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* skse)
-{
-	InitializeDiagnostics();
-	Hooks::Install();
+EXTERN_C __declspec(dllexport) bool SKSEAPI
+SKSEPlugin_Load(const SKSE::LoadInterface *skse) {
+  SKSE::Init(skse);
+  SKSE::GetMessagingInterface()->RegisterListener(SKSEMessageHandler);
 
-	palu::SettingsCache::Instance().Refresh();
+  InitializeDiagnostics();
+  Hooks::Install();
 
-	REL_MESSAGE("{} plugin loaded", PALU_NAME);
-	SKSE::Init(skse);
-	SKSE::GetMessagingInterface()->RegisterListener(SKSEMessageHandler);
+  palu::SettingsCache::Instance().Refresh();
 
-	return true;
+  REL_MESSAGE("{} plugin loaded", PALU_NAME);
+  return true;
 }

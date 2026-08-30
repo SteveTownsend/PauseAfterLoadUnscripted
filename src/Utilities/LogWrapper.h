@@ -26,12 +26,30 @@ extern std::shared_ptr<spdlog::logger> PALULogger;
 // wrappers for spdLog to make release/debug logging easier
 // Debug build only
 #if _DEBUG || defined(_FULL_LOGGING)
-#define DBG_DMESSAGE(a_fmt, ...) PALULogger->debug(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define DBG_VMESSAGE(a_fmt, ...) PALULogger->trace(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define DBG_MESSAGE(a_fmt, ...) PALULogger->info(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define DBG_WARNING(a_fmt, ...) PALULogger->warn(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define DBG_ERROR(a_fmt, ...) PALULogger->error(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define DBG_FATALERROR(a_fmt, ...) PALULogger->critical(a_fmt __VA_OPT__(,) __VA_ARGS__)
+#define DBG_DMESSAGE(a_fmt, ...)                                               \
+  if (PALULogger->level() <= spdlog::level::debug) {                           \
+    PALULogger->debug(a_fmt __VA_OPT__(, ) __VA_ARGS__);                       \
+  }
+#define DBG_VMESSAGE(a_fmt, ...)                                               \
+  if (PALULogger->level() <= spdlog::level::trace) {                           \
+    PALULogger->trace(a_fmt __VA_OPT__(, ) __VA_ARGS__);                       \
+  }
+#define DBG_MESSAGE(a_fmt, ...)                                                \
+  if (PALULogger->level() <= spdlog::level::info) {                            \
+    PALULogger->info(a_fmt __VA_OPT__(, ) __VA_ARGS__);                        \
+  }
+#define DBG_WARNING(a_fmt, ...)                                                \
+  if (PALULogger->level() <= spdlog::level::warn) {                            \
+    PALULogger->warn(a_fmt __VA_OPT__(, ) __VA_ARGS__);                        \
+  }
+#define DBG_ERROR(a_fmt, ...)                                                  \
+  if (PALULogger->level() <= spdlog::level::err) {                             \
+    PALULogger->error(a_fmt __VA_OPT__(, ) __VA_ARGS__);                       \
+  }
+#define DBG_FATALERROR(a_fmt, ...)                                             \
+  if (PALULogger->level() <= spdlog::level::critical) {                        \
+    PALULogger->critical(a_fmt __VA_OPT__(, ) __VA_ARGS__);                    \
+  }
 #else
 #define DBG_DMESSAGE(a_fmt, ...)
 #define DBG_VMESSAGE(a_fmt, ...)
@@ -42,9 +60,27 @@ extern std::shared_ptr<spdlog::logger> PALULogger;
 #endif
 
 // Always log
-#define REL_DMESSAGE(a_fmt, ...) PALULogger->debug(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define REL_VMESSAGE(a_fmt, ...) PALULogger->trace(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define REL_MESSAGE(a_fmt, ...) PALULogger->info(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define REL_WARNING(a_fmt, ...) PALULogger->warn(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define REL_ERROR(a_fmt, ...) PALULogger->error(a_fmt __VA_OPT__(,) __VA_ARGS__)
-#define REL_FATALERROR(a_fmt, ...) PALULogger->critical(a_fmt __VA_OPT__(,) __VA_ARGS__)
+#define REL_DMESSAGE(a_fmt, ...)                                               \
+  if (PALULogger->level() <= spdlog::level::debug) {                           \
+    PALULogger->debug(a_fmt __VA_OPT__(, ) __VA_ARGS__);                       \
+  }
+#define REL_VMESSAGE(a_fmt, ...)                                               \
+  if (PALULogger->level() <= spdlog::level::trace) {                           \
+    PALULogger->trace(a_fmt __VA_OPT__(, ) __VA_ARGS__);                       \
+  }
+#define REL_MESSAGE(a_fmt, ...)                                                \
+  if (PALULogger->level() <= spdlog::level::warn) {                            \
+    PALULogger->warn(a_fmt __VA_OPT__(, ) __VA_ARGS__);                        \
+  }
+#define REL_WARNING(a_fmt, ...)                                                \
+  if (PALULogger->level() <= spdlog::level::info) {                            \
+    PALULogger->info(a_fmt __VA_OPT__(, ) __VA_ARGS__);                        \
+  }
+#define REL_ERROR(a_fmt, ...)                                                  \
+  if (PALULogger->level() <= spdlog::level::err) {                             \
+    PALULogger->error(a_fmt __VA_OPT__(, ) __VA_ARGS__);                       \
+  }
+#define REL_FATALERROR(a_fmt, ...)                                             \
+  if (PALULogger->level() <= spdlog::level::critical) {                        \
+    PALULogger->critical(a_fmt __VA_OPT__(, ) __VA_ARGS__);                    \
+  }

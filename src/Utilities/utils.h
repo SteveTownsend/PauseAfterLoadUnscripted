@@ -19,7 +19,6 @@ http://www.fsf.org/licensing/licenses
 *************************************************************************/
 #pragma once
 
-
 constexpr RE::FormID ClothKeyword = 0x06BBE8;
 constexpr RE::FormID CurrentFollowerFaction = 0x0005C84E;
 
@@ -27,76 +26,68 @@ constexpr double DistanceUnitInFeet = 0.046875;
 constexpr double FeetPerMile = 5280.0;
 constexpr double DistanceUnitInMiles = DistanceUnitInFeet / FeetPerMile;
 
-namespace FileUtils
-{
-	std::wstring GetGamePath(void);
-	std::wstring GetPluginFileName(void) noexcept;
-	std::wstring GetPluginPath(void) noexcept;
-	inline bool CanOpenFile(const char* fileName)
-	{
-		std::ifstream ifs(fileName);
-		return ifs.fail() ? false : true;
-	}
+namespace FileUtils {
+std::wstring GetGamePath(void);
+std::wstring GetPluginFileName(void) noexcept;
+std::wstring GetPluginPath(void) noexcept;
+inline bool CanOpenFile(const char *fileName) {
+  std::ifstream ifs(fileName);
+  return ifs.fail() ? false : true;
+}
+} // namespace FileUtils
+
+namespace utils {
+double GetGameSettingFloat(const RE::BSFixedString &name);
 }
 
-namespace utils
-{
-	double GetGameSettingFloat(const RE::BSFixedString& name);
+namespace WindowsUtils {
+unsigned long long microsecondsNow();
+void LogProcessWorkingSet();
+void TakeNap(const double delaySeconds);
+
+class ScopedTimer {
+public:
+  ScopedTimer(const std::string &context);
+  ~ScopedTimer();
+
+private:
+  ScopedTimer();
+  ScopedTimer(const ScopedTimer &);
+  ScopedTimer &operator=(ScopedTimer &);
+
+  unsigned long long m_startTime;
+  std::string m_context;
+};
+
+class ScopedTimerFactory {
+public:
+  static ScopedTimerFactory &Instance();
+  ScopedTimerFactory() : m_nextHandle(0) {}
+  int StartTimer(const std::string &context);
+  void StopTimer(const int handle);
+
+private:
+  static std::unique_ptr<ScopedTimerFactory> m_instance;
+  RecursiveLock m_timerLock;
+  std::unordered_map<int, std::unique_ptr<ScopedTimer>> m_timerByHandle;
+  int m_nextHandle;
+};
+} // namespace WindowsUtils
+
+namespace FormUtils {
+// This can be missing, e.g. "Elementary Destruction.esp" FormID 0x31617, Github
+// issue #28 Certain forms such as CONT do not load this at runtime, see
+// https://github.com/Ryan-rsm-McKenzie/CommonLibSSE/issues/20
+inline std::string SafeGetFormEditorID(const RE::TESForm *form) {
+  const char *edid(form ? form->GetFormEditorID() : nullptr);
+  return edid ? std::string(edid) : std::string();
 }
 
-namespace WindowsUtils
-{
-	unsigned long long microsecondsNow();
-	void LogProcessWorkingSet();
-	void TakeNap(const double delaySeconds);
-
-	class ScopedTimer {
-	public:
-		ScopedTimer(const std::string& context);
-		~ScopedTimer();
-	private:
-		ScopedTimer();
-		ScopedTimer(const ScopedTimer&);
-		ScopedTimer& operator=(ScopedTimer&);
-
-		unsigned long long m_startTime;
-		std::string m_context;
-	};
-
-	class ScopedTimerFactory
-	{
-	public:
-		static ScopedTimerFactory& Instance();
-		ScopedTimerFactory() : m_nextHandle(0) {}
-		int StartTimer(const std::string& context);
-		void StopTimer(const int handle);
-
-	private:
-		static std::unique_ptr<ScopedTimerFactory> m_instance;
-		RecursiveLock m_timerLock;
-		std::unordered_map<int, std::unique_ptr<ScopedTimer>> m_timerByHandle;
-		int m_nextHandle;
-	};
+inline bool IsConcrete(const RE::TESForm *form) {
+  return form && form->GetPlayable() && !std::string(form->GetName()).empty();
 }
+} // namespace FormUtils
 
-namespace FormUtils
-{
-	// This can be missing, e.g. "Elementary Destruction.esp" FormID 0x31617, Github issue #28
-	// Certain forms such as CONT do not load this at runtime, see 
-	// https://github.com/Ryan-rsm-McKenzie/CommonLibSSE/issues/20
-	inline std::string SafeGetFormEditorID(const RE::TESForm* form)
-	{
-		const char* edid(form ? form->GetFormEditorID() : nullptr);
-		return edid ? std::string(edid) : std::string();
-	}
-
-	inline bool IsConcrete(const RE::TESForm* form)
-	{
-		return form && form->GetPlayable() && !std::string(form->GetName()).empty();
-	}
-}
-
-namespace StringUtils
-{
-	std::string FromUnicode(const std::wstring& input);
+namespace StringUtils {
+std::string FromUnicode(const std::wstring &input);
 }

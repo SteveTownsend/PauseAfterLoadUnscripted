@@ -1,3 +1,4 @@
+// clang-format off
 /*** LICENCE ***************************************************************************************/
 /*
   SimpleIni - Simple class for configuration file like .ini
@@ -132,7 +133,7 @@ bool SimpleIni::Load(const std::string& filename)
 			line.erase(pos, length-pos);
 		}
 
-		//*** Mémorisation
+		//*** Mï¿½morisation
 		key = Normalize(Trim(line));
 		m_IniMap[section][key] = iniLine;
 		if(comment!="")
@@ -395,3 +396,4 @@ bool SimpleIni::KeyIterator::operator!=(KeyIterator const& a)
 {
 	return a.m_mapIterator!=m_mapIterator;
 }
+// clang-format on
