@@ -145,7 +145,7 @@ public:
       _listener->SetDelay(pauseDelay + ignoreInput);
 
       // Activate InputHandler here - blocks input until any configured delay
-      // expires
+      // for pause-game plus ignore-input expires
       _listener->Enable();
 
       // Optionally, resume after configured delay
@@ -160,10 +160,14 @@ public:
         if (_delayed.compare_exchange_strong(expected2, desired2)) {
           _timer.expires_from_now(boost::posix_time::millisec(
               static_cast<int>((ignoreInput + autoResumeAfter) * 1000.0)));
-          _timer.async_wait([this](const boost::system::error_code &ec) {
+          _timer.async_wait([this, autoResumeAfter](const boost::system::error_code &ec) {
             if (!ec) {
-              REL_DMESSAGE("Pause timed out");
-              Unpause();
+              if (autoResumeAfter == 0.0) {
+                REL_DMESSAGE("Initial timeout complete, wait indefinitely for input");
+              } else {
+                REL_DMESSAGE("Pause timed out");
+                Unpause();
+              }
             }
           });
           // Start IO Service to handle timer

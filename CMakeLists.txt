@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.28.1)
 # #######################################################################################################################
 set(NAME "PauseAfterLoadUnscripted")
 set(PRETTY_NAME "Pause After Load Unscripted SE")
-set(VERSION 2.2.0)
+set(VERSION 3.1.0)
 
 message("${CMAKE_SIZEOF_VOID_P}")
 set(spdlog_ROOT ${CMAKE_CURRENT_SOURCE_DIR})

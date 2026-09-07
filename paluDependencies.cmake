@@ -16,7 +16,7 @@ endif()
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2
-  GIT_TAG        v3.12.0
+  GIT_TAG        v3.16.0
   OVERRIDE_FIND_PACKAGE
   )
 FetchContent_MakeAvailable(Catch2)
@@ -24,7 +24,7 @@ FetchContent_MakeAvailable(Catch2)
 FetchContent_Declare(
   rapidcsv
   GIT_REPOSITORY https://github.com/d99kris/rapidcsv
-  GIT_TAG        v8.90
+  GIT_TAG        v9.07
   OVERRIDE_FIND_PACKAGE
   )
 FetchContent_MakeAvailable(rapidcsv)
@@ -36,8 +36,8 @@ set(BUILD_TESTS OFF)
 FetchContent_Declare(
   CommonLibSSE
   GIT_REPOSITORY https://github.com/alandtse/CommonLibVR
-  # Dec 12 2025 -> Jan 22 2026
-  GIT_TAG        5d341d47108de8f1e70de7db9fa8244d34544fd6
+  # Jan 22 2026 -> Sep 07 2026
+  GIT_TAG        v7.3.0
   OVERRIDE_FIND_PACKAGE
 )
 FetchContent_MakeAvailable(CommonLibSSE)
